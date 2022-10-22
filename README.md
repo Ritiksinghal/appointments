@@ -38,13 +38,6 @@ To Update an appointment:
 
 To Delete an appointment:
  URL: http://localhost:8080/appointment/{id} [DELETE]
- Request Body: Sample
-               {
-                "name": "Town Hall Meet",
-                "purpose": "Management-Employee Meet and Greet",
-                "duration": "2 hours",
-                "dateTime": "27-10-2022 23:59:59.30"
-              }
               
 
 
