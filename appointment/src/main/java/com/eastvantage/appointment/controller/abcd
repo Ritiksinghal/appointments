@@ -63,23 +63,21 @@
       color: #2f3542;
     }
 
+    .toolbar {
+      display: none;
+    }
+
+    .toolbar.visible {
+      display: flex;
+      gap: 12px;
+    }
+
     .toolbar button {
-      background-color: #1e90ff;
-      color: white;
+      background: none;
       border: none;
-      padding: 8px 12px;
-      margin-left: 10px;
-      border-radius: 4px;
-      font-weight: bold;
+      font-size: 20px;
       cursor: pointer;
-    }
-
-    .toolbar button:nth-child(2) {
-      background-color: #ff6b81;
-    }
-
-    .toolbar button:nth-child(3) {
-      background-color: #2ed573;
+      color: #333;
     }
 
     #tableWrapper {
@@ -96,8 +94,9 @@
 
     th, td {
       border: 1px solid #ccc;
-      padding: 8px;
+      padding: 6px;
       text-align: left;
+      position: relative;
     }
 
     th {
@@ -116,19 +115,34 @@
       background: #eef;
     }
 
-    .filter-row input {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      padding: 4px;
-      font-size: 13px;
-    }
-
     .checkbox-col {
       text-align: center;
     }
 
     .checkbox-col input {
       transform: scale(1.2);
+    }
+
+    .filter-icon {
+      font-size: 12px;
+      float: right;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    .filter-box {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      z-index: 10;
+      padding: 6px;
+    }
+
+    .filter-box input {
+      width: 150px;
+      padding: 4px;
     }
 
     .empty {
@@ -146,7 +160,7 @@
   <div id="main">
     <div id="topBar">
       <h2 id="sheetTitle">No sheet selected</h2>
-      <div class="toolbar">
+      <div class="toolbar" id="toolbar">
         <button onclick="addRow()">➕</button>
         <button onclick="removeSelected()">➖</button>
         <button onclick="save()">💾</button>
@@ -157,7 +171,6 @@
       <table id="dataTable" style="display:none;">
         <thead>
           <tr id="headerRow"></tr>
-          <tr id="filterRow" class="filter-row"></tr>
         </thead>
         <tbody id="tableBody"></tbody>
       </table>
