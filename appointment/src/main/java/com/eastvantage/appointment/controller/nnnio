@@ -5,9 +5,9 @@ const sheetButtons = document.getElementById('sheetButtons');
 const sheetTitle = document.getElementById('sheetTitle');
 const dataTable = document.getElementById('dataTable');
 const headerRow = document.getElementById('headerRow');
-const filterRow = document.getElementById('filterRow');
 const tableBody = document.getElementById('tableBody');
 const emptyState = document.getElementById('emptyState');
+const toolbar = document.getElementById('toolbar');
 
 window.onload = async function () {
   const res = await fetch('/api/config/all');
@@ -27,6 +27,7 @@ function selectSheet(sheet, clickedBtn) {
   sheetTitle.innerText = sheet;
   dataTable.style.display = 'table';
   emptyState.style.display = 'none';
+  toolbar.classList.add('visible');
 
   Array.from(sheetButtons.children).forEach(btn => btn.classList.remove('active'));
   clickedBtn.classList.add('active');
@@ -36,7 +37,6 @@ function selectSheet(sheet, clickedBtn) {
 
 function renderTable() {
   headerRow.innerHTML = '';
-  filterRow.innerHTML = '';
   tableBody.innerHTML = '';
 
   const rows = data[currentSheet] || [];
@@ -44,45 +44,41 @@ function renderTable() {
 
   const headers = Object.keys(rows[0]);
 
-  // Select checkbox column
-  let selectTh = document.createElement('th');
+  // Checkbox column
+  const selectTh = document.createElement('th');
   selectTh.innerText = '';
   headerRow.appendChild(selectTh);
-  filterRow.appendChild(document.createElement('th')); // Empty for checkbox
 
   headers.forEach(header => {
     const th = document.createElement('th');
     th.innerText = header;
+
+    const icon = document.createElement('span');
+    icon.className = 'filter-icon';
+    icon.innerText = '🔍';
+    icon.onclick = (e) => showFilterBox(e, header, th);
+    th.appendChild(icon);
+
     headerRow.appendChild(th);
-
-    const filterTd = document.createElement('td');
-    const filterInput = document.createElement('input');
-    filterInput.placeholder = 'Filter...';
-    filterInput.oninput = (e) => {
-      filters[header] = e.target.value.toLowerCase();
-      renderTable(); // re-render filtered
-    };
-    filterTd.appendChild(filterInput);
-    filterRow.appendChild(filterTd);
   });
 
-  const filteredRows = rows.filter(row => {
-    return Object.entries(filters).every(([key, val]) =>
+  const filteredRows = rows.filter(row =>
+    Object.entries(filters).every(([key, val]) =>
       (row[key] ?? '').toString().toLowerCase().includes(val)
-    );
-  });
+    )
+  );
 
   filteredRows.forEach((row, rowIndex) => {
     const tr = document.createElement('tr');
 
-    // Select checkbox
-    const checkboxTd = document.createElement('td');
-    checkboxTd.className = 'checkbox-col';
+    // Checkbox
+    const cbTd = document.createElement('td');
+    cbTd.className = 'checkbox-col';
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.dataset.index = rowIndex;
-    checkboxTd.appendChild(cb);
-    tr.appendChild(checkboxTd);
+    cbTd.appendChild(cb);
+    tr.appendChild(cbTd);
 
     headers.forEach(header => {
       const td = document.createElement('td');
@@ -97,6 +93,30 @@ function renderTable() {
 
     tableBody.appendChild(tr);
   });
+}
+
+function showFilterBox(e, header, thElement) {
+  // Remove any existing filter box
+  document.querySelectorAll('.filter-box').forEach(el => el.remove());
+
+  const box = document.createElement('div');
+  box.className = 'filter-box';
+
+  const input = document.createElement('input');
+  input.value = filters[header] || '';
+  input.placeholder = `Filter ${header}`;
+  input.oninput = () => {
+    filters[header] = input.value.toLowerCase();
+    renderTable();
+  };
+
+  box.appendChild(input);
+  thElement.appendChild(box);
+
+  input.focus();
+  e.stopPropagation();
+
+  document.addEventListener('click', () => box.remove(), { once: true });
 }
 
 function addRow() {
