@@ -2,9 +2,11 @@ let data = {};
 let currentSheet = '';
 const sheetButtons = document.getElementById('sheetButtons');
 const sheetTitle = document.getElementById('sheetTitle');
-const sheetContent = document.getElementById('sheetContent');
-const actionButtons = document.getElementById('actionButtons');
+const dataTable = document.getElementById('dataTable');
+const headerRow = document.getElementById('headerRow');
+const tableBody = document.getElementById('tableBody');
 const emptyState = document.getElementById('emptyState');
+const actionButtons = document.getElementById('actionButtons');
 
 window.onload = async function () {
   const res = await fetch('/api/config/all');
@@ -21,61 +23,67 @@ window.onload = async function () {
 function selectSheet(sheet, clickedBtn) {
   currentSheet = sheet;
   sheetTitle.innerText = sheet;
-  sheetContent.innerHTML = '';
-  actionButtons.style.display = 'flex';
-  emptyState.style.display = 'none';
 
+  dataTable.style.display = 'table';
+  emptyState.style.display = 'none';
+  actionButtons.style.display = 'flex';
+
+  // Activate button
   Array.from(sheetButtons.children).forEach(btn => btn.classList.remove('active'));
   clickedBtn.classList.add('active');
 
-  renderCards();
+  renderTable();
 }
 
-function renderCards() {
-  const rows = data[currentSheet] || [];
+function renderTable() {
+  headerRow.innerHTML = '';
+  tableBody.innerHTML = '';
 
-  if (rows.length === 0) {
-    sheetContent.innerHTML = '<div class="empty">No rows yet.</div>';
-    return;
-  }
+  const rows = data[currentSheet] || [];
+  if (rows.length === 0) return;
 
   const headers = Object.keys(rows[0]);
 
+  headers.forEach(header => {
+    const th = document.createElement('th');
+    th.innerText = header;
+    headerRow.appendChild(th);
+  });
+
+  const actionTh = document.createElement('th');
+  actionTh.innerText = 'Actions';
+  headerRow.appendChild(actionTh);
+
   rows.forEach((row, rowIndex) => {
-    const card = document.createElement('div');
-    card.className = 'card';
+    const tr = document.createElement('tr');
 
     headers.forEach(header => {
-      const field = document.createElement('div');
-      field.className = 'field';
-
-      const label = document.createElement('label');
-      label.innerText = header;
-
-      const input = document.createElement('textarea');
-input.value = row[header] ?? '';
-input.oninput = (e) => {
-  data[currentSheet][rowIndex][header] = e.target.value;
-};
-
-      field.appendChild(label);
-      field.appendChild(input);
-      card.appendChild(field);
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.value = row[header] ?? '';
+      input.oninput = (e) => {
+        data[currentSheet][rowIndex][header] = e.target.value;
+      };
+      td.appendChild(input);
+      tr.appendChild(td);
     });
 
-    const actions = document.createElement('div');
-    actions.className = 'card-actions';
-
+    const delTd = document.createElement('td');
     const delBtn = document.createElement('button');
     delBtn.innerText = 'Delete';
     delBtn.onclick = () => {
       data[currentSheet].splice(rowIndex, 1);
-      renderCards();
+      renderTable();
     };
+    delBtn.style.background = '#ff4757';
+    delBtn.style.color = 'white';
+    delBtn.style.border = 'none';
+    delBtn.style.padding = '6px 10px';
+    delBtn.style.borderRadius = '4px';
+    delTd.appendChild(delBtn);
+    tr.appendChild(delTd);
 
-    actions.appendChild(delBtn);
-    card.appendChild(actions);
-    sheetContent.appendChild(card);
+    tableBody.appendChild(tr);
   });
 }
 
@@ -84,7 +92,7 @@ function addRow() {
   const newRow = {};
   headers.forEach(h => newRow[h] = '');
   data[currentSheet].push(newRow);
-  renderCards();
+  renderTable();
 }
 
 function save() {
@@ -93,8 +101,8 @@ function save() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   })
-  .then(res => {
-    if (res.ok) alert('Saved successfully!');
-    else alert('Error saving!');
-  });
+    .then(res => {
+      if (res.ok) alert('Saved successfully!');
+      else alert('Error saving!');
+    });
 }
