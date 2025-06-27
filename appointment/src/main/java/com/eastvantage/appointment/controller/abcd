@@ -6,7 +6,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
@@ -14,7 +13,6 @@
       height: 100vh;
       overflow: hidden;
     }
-
     #sidebar {
       width: 300px;
       background-color: #2f3542;
@@ -22,12 +20,7 @@
       padding: 1em;
       overflow-y: auto;
     }
-
-    #sidebar h3 {
-      color: #dcdde1;
-      margin-bottom: 1em;
-    }
-
+    #sidebar h3 { color: #dcdde1; margin-bottom: 1em; }
     #sidebar button {
       background: none;
       border: none;
@@ -39,11 +32,9 @@
       border-radius: 4px;
       white-space: normal;
     }
-
     #sidebar button.active, #sidebar button:hover {
       background-color: #57606f;
     }
-
     #main {
       flex-grow: 1;
       padding: 1em;
@@ -51,104 +42,67 @@
       display: flex;
       flex-direction: column;
     }
-
     #topBar {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
-    #sheetTitle {
-      font-size: 1.4em;
-      color: #2f3542;
-    }
-
-    .toolbar {
-      display: none;
-    }
-
-    .toolbar.visible {
-      display: flex;
-      gap: 12px;
-    }
-
+    #sheetTitle { font-size: 1.4em; color: #2f3542; }
+    .toolbar { display: none; gap: 12px; }
+    .toolbar.visible { display: flex; }
     .toolbar button {
       background: none;
       border: none;
       font-size: 20px;
       cursor: pointer;
       color: #333;
+      opacity: 0.5;
     }
-
+    .toolbar button.enabled { opacity: 1; }
     #tableWrapper {
-      overflow-x: auto;
+      overflow: auto;
       flex-grow: 1;
       margin-top: 1em;
     }
-
     table {
       border-collapse: collapse;
       width: 100%;
       min-width: 1000px;
+      table-layout: auto;
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 6px;
       text-align: left;
       position: relative;
+      white-space: nowrap;
     }
-
-    th {
-      background-color: #f1f2f6;
-    }
-
+    th { background-color: #f1f2f6; }
     td input {
-      width: 100%;
-      border: none;
-      background: transparent;
+      width: 100%; border: none; background: transparent;
       font-family: inherit;
     }
-
-    td input:focus {
-      outline: none;
-      background: #eef;
-    }
-
-    .checkbox-col {
-      text-align: center;
-    }
-
-    .checkbox-col input {
-      transform: scale(1.2);
-    }
-
+    td input:focus { outline: none; background: #eef; }
+    .checkbox-col { text-align: center; width: 40px; }
+    .checkbox-col input { transform: scale(1.2); }
     .filter-icon {
-      font-size: 12px;
-      float: right;
-      cursor: pointer;
-      margin-left: 8px;
+      font-size: 14px; float: right; cursor: pointer;
     }
-
     .filter-box {
-      position: absolute;
-      top: 100%;
-      right: 0;
-      background: white;
-      border: 1px solid #ccc;
-      z-index: 10;
-      padding: 6px;
+      position: absolute; top: 100%; right: 0;
+      background: white; border: 1px solid #ccc;
+      z-index: 10; padding: 6px;
     }
-
-    .filter-box input {
-      width: 150px;
-      padding: 4px;
+    .filter-box input { width: 150px; padding: 4px; }
+    .filter-box label { font-size: 12px; display: block; margin: 4px 0; }
+    .clear-filters {
+      margin-left: 8px;
+      font-size: 12px;
+      color: blue;
+      cursor: pointer;
+      text-decoration: underline;
     }
-
-    .empty {
-      color: #999;
-      margin-top: 2em;
-    }
+    .empty { color: #999; margin-top: 2em; }
   </style>
 </head>
 <body>
@@ -156,22 +110,18 @@
     <h3>Sheets</h3>
     <div id="sheetButtons"></div>
   </div>
-
   <div id="main">
     <div id="topBar">
       <h2 id="sheetTitle">No sheet selected</h2>
       <div class="toolbar" id="toolbar">
-        <button onclick="addRow()">➕</button>
-        <button onclick="removeSelected()">➖</button>
-        <button onclick="save()">💾</button>
+        <button id="btnAdd" onclick="addRow()">➕</button>
+        <button id="btnRemove" onclick="removeSelected()">➖</button>
+        <button id="btnSave" onclick="save()">💾</button>
       </div>
     </div>
-
     <div id="tableWrapper">
       <table id="dataTable" style="display:none;">
-        <thead>
-          <tr id="headerRow"></tr>
-        </thead>
+        <thead><tr id="headerRow"></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
       <div class="empty" id="emptyState">Select a sheet to begin</div>
