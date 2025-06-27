@@ -1,18 +1,16 @@
-let data = {};
-let currentSheet = '';
-let filters = {};
-const sheetButtons = document.getElementById('sheetButtons');
-const sheetTitle = document.getElementById('sheetTitle');
-const dataTable = document.getElementById('dataTable');
-const headerRow = document.getElementById('headerRow');
-const tableBody = document.getElementById('tableBody');
-const emptyState = document.getElementById('emptyState');
-const toolbar = document.getElementById('toolbar');
+let data = {}, currentSheet = '', filters = {};
+const sheetButtons = document.getElementById('sheetButtons'),
+      sheetTitle = document.getElementById('sheetTitle'),
+      dataTable = document.getElementById('dataTable'),
+      headerRow = document.getElementById('headerRow'),
+      tableBody = document.getElementById('tableBody'),
+      emptyState = document.getElementById('emptyState'),
+      toolbar = document.getElementById('toolbar'),
+      btnRemove = document.getElementById('btnRemove'),
+      btnSave = document.getElementById('btnSave');
 
-window.onload = async function () {
-  const res = await fetch('/api/config/all');
-  data = await res.json();
-
+window.onload = async () => {
+  data = await (await fetch('/api/config/all')).json();
   Object.keys(data).forEach(sheet => {
     const btn = document.createElement('button');
     btn.innerText = sheet;
@@ -28,119 +26,121 @@ function selectSheet(sheet, clickedBtn) {
   dataTable.style.display = 'table';
   emptyState.style.display = 'none';
   toolbar.classList.add('visible');
-
-  Array.from(sheetButtons.children).forEach(btn => btn.classList.remove('active'));
+  btnRemove.classList.remove('enabled');
+  btnSave.classList.remove('enabled');
+  Array.from(sheetButtons.children).forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');
-
   renderTable();
 }
 
 function renderTable() {
   headerRow.innerHTML = '';
   tableBody.innerHTML = '';
-
   const rows = data[currentSheet] || [];
-  if (rows.length === 0) return;
-
+  if (!rows.length) return;
   const headers = Object.keys(rows[0]);
-
-  // Checkbox column
-  const selectTh = document.createElement('th');
-  selectTh.innerText = '';
-  headerRow.appendChild(selectTh);
-
+  headerRow.appendChild(document.createElement('th')); // checkbox col
   headers.forEach(header => {
     const th = document.createElement('th');
     th.innerText = header;
-
     const icon = document.createElement('span');
     icon.className = 'filter-icon';
-    icon.innerText = '🔍';
-    icon.onclick = (e) => showFilterBox(e, header, th);
+    icon.innerText = '≡';
+    icon.onclick = e => showFilterBox(e, header, th);
     th.appendChild(icon);
-
     headerRow.appendChild(th);
   });
 
-  const filteredRows = rows.filter(row =>
-    Object.entries(filters).every(([key, val]) =>
-      (row[key] ?? '').toString().toLowerCase().includes(val)
-    )
-  );
+  const filtered = rows.map((r, idx) => ({ idx, r }))
+    .filter(({ r }) => Object.entries(filters).every(([k, v]) => {
+      const text = (r[k] ?? '').toString();
+      return filters[k + '_regex']
+        ? new RegExp(v, filters[k + '_case'] ? '' : 'i').test(text)
+        : text.toLowerCase().includes(v);
+    }));
 
-  filteredRows.forEach((row, rowIndex) => {
+  filtered.forEach(({ idx, r }) => {
     const tr = document.createElement('tr');
-
-    // Checkbox
     const cbTd = document.createElement('td');
     cbTd.className = 'checkbox-col';
     const cb = document.createElement('input');
     cb.type = 'checkbox';
-    cb.dataset.index = rowIndex;
+    cb.dataset.index = idx;
+    cb.onclick = () => toggleActions();
     cbTd.appendChild(cb);
     tr.appendChild(cbTd);
 
-    headers.forEach(header => {
-      const td = document.createElement('td');
-      const input = document.createElement('input');
-      input.value = row[header] ?? '';
-      input.oninput = (e) => {
-        data[currentSheet][rowIndex][header] = e.target.value;
-      };
-      td.appendChild(input);
+    headers.forEach(h => {
+      const td = document.createElement('td'),
+            inp = document.createElement('input');
+      inp.value = r[h] ?? '';
+      inp.oninput = e => data[currentSheet][idx][h] = e.target.value;
+      td.appendChild(inp);
       tr.appendChild(td);
     });
-
     tableBody.appendChild(tr);
   });
 }
 
-function showFilterBox(e, header, thElement) {
-  // Remove any existing filter box
-  document.querySelectorAll('.filter-box').forEach(el => el.remove());
+function showFilterBox(e, header, th) {
+  document.querySelectorAll('.filter-box').forEach(x => x.remove());
+  const box = document.createElement('div'); box.className = 'filter-box';
+  const ip = document.createElement('input');
+  ip.value = filters[header] || '';
+  ip.placeholder = 'Filter...';
+  const lb = document.createElement('label');
+  const ckCase = document.createElement('input');
+  ckCase.type = 'checkbox';
+  const lbCase = document.createElement('label');
+  lbCase.innerText = 'Case';
+  lbCase.style.fontSize = '12px';
+  const ckRegex = document.createElement('input');
+  ckRegex.type = 'checkbox';
+  const lbRegex = document.createElement('label');
+  lbRegex.innerText = 'Regex';
+  lbRegex.style.fontSize = '12px';
+  const clr = document.createElement('span');
+  clr.className = 'clear-filters';
+  clr.innerText = 'Clear';
+  clr.onclick = () => { filters[header] = ''; filters[header + '_regex'] = false; filters[header + '_case'] = false; renderTable(); box.remove(); };
 
-  const box = document.createElement('div');
-  box.className = 'filter-box';
+  ip.oninput = () => { filters[header] = ip.value; renderTable(); };
+  ckCase.onchange = () => { filters[header + '_case'] = ckCase.checked; renderTable(); };
+  ckRegex.onchange = () => { filters[header + '_regex'] = ckRegex.checked; renderTable(); };
 
-  const input = document.createElement('input');
-  input.value = filters[header] || '';
-  input.placeholder = `Filter ${header}`;
-  input.oninput = () => {
-    filters[header] = input.value.toLowerCase();
-    renderTable();
-  };
-
-  box.appendChild(input);
-  thElement.appendChild(box);
-
-  input.focus();
+  box.append(ip, ckCase, lbCase, ckRegex, lbRegex, clr);
+  th.append(box);
+  ip.focus();
   e.stopPropagation();
-
   document.addEventListener('click', () => box.remove(), { once: true });
 }
 
 function addRow() {
   const headers = Object.keys(data[currentSheet][0] || {});
-  const newRow = {};
-  headers.forEach(h => newRow[h] = '');
-  data[currentSheet].push(newRow);
+  const blank = headers.reduce((a, h) => (a[h] = '' , a), {});
+  data[currentSheet].push(blank);
   renderTable();
 }
 
 function removeSelected() {
-  const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]:checked');
-  const indexes = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
-  data[currentSheet] = data[currentSheet].filter((_, i) => !indexes.includes(i));
+  const chk = tableBody.querySelectorAll('input[type=checkbox]:checked');
+  const idxs = [...chk].map(c => +c.dataset.index);
+  data[currentSheet] = data[currentSheet].filter((_, i) => !idxs.includes(i));
   renderTable();
+  toggleActions();
+}
+
+function toggleActions() {
+  const any = tableBody.querySelector('input[type=checkbox]:checked');
+  btnRemove.classList.toggle('enabled', !!any);
+  btnSave.classList.toggle('enabled', !!any);
 }
 
 function save() {
+  if (!btnSave.classList.contains('enabled')) return;
   fetch('/api/config/update-all', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  }).then(res => {
-    if (res.ok) alert('Saved!');
-    else alert('Save failed.');
-  });
+  }).then(r => r.ok ? alert('Saved!') : alert('Save failed.'));
 }
