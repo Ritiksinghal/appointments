@@ -3,41 +3,42 @@
 <head>
   <title>Excel Config Editor</title>
   <script src="/static/app.js" defer></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
       display: flex;
       height: 100vh;
+      overflow: hidden;
     }
 
     #sidebar {
-      width: 220px;
-      background: #2f3542;
+      width: 200px;
+      background-color: #2f3542;
       color: white;
       padding: 1em;
-      box-sizing: border-box;
       overflow-y: auto;
     }
 
     #sidebar h3 {
-      margin-bottom: 1em;
       color: #dcdde1;
+      margin-bottom: 1em;
     }
 
     #sidebar button {
-      display: block;
-      width: 100%;
       background: none;
       border: none;
       color: #dcdde1;
       padding: 10px;
-      margin-bottom: 5px;
+      width: 100%;
       text-align: left;
-      border-radius: 4px;
       cursor: pointer;
+      border-radius: 4px;
     }
 
     #sidebar button.active, #sidebar button:hover {
@@ -46,16 +47,15 @@
 
     #main {
       flex-grow: 1;
-      padding: 2em;
-      overflow: hidden;
       display: flex;
       flex-direction: column;
+      padding: 1em;
+      overflow: hidden;
     }
 
     #sheetTitle {
-      font-size: 1.4em;
+      font-size: 1.2em;
       margin-bottom: 1em;
-      color: #2f3542;
     }
 
     #tableWrapper {
@@ -64,54 +64,57 @@
     }
 
     table {
-      border-collapse: collapse;
       width: 100%;
-      min-width: 800px;
-      table-layout: fixed;
+      border-collapse: collapse;
+      min-width: 900px;
     }
 
     th, td {
       border: 1px solid #ccc;
-      padding: 10px;
-      text-align: left;
-    }
-
-    td input {
-      width: 100%;
-      box-sizing: border-box;
       padding: 6px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-family: inherit;
+      text-align: left;
     }
 
     th {
       background-color: #f1f2f6;
     }
 
-    .actions button {
-      background-color: #1e90ff;
-      color: white;
+    td input {
       border: none;
-      padding: 10px 14px;
-      margin-right: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
+      padding: 6px;
+      width: 100%;
+      font-family: inherit;
+      font-size: 14px;
+      background: transparent;
     }
 
-    .actions button:last-child {
-      background-color: #ff4757;
+    td input:focus {
+      outline: none;
+      background: #eef;
     }
 
     .actions {
       margin-top: 1em;
     }
 
+    .actions button {
+      background-color: #1e90ff;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      margin-right: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .actions button:last-child {
+      background-color: #ff4757;
+    }
+
     .empty {
       color: #888;
-      text-align: center;
-      margin-top: 50px;
+      margin-top: 2em;
     }
   </style>
 </head>
@@ -123,11 +126,10 @@
 
   <div id="main">
     <h2 id="sheetTitle">No sheet selected</h2>
+
     <div id="tableWrapper">
       <table id="dataTable" style="display: none;">
-        <thead>
-          <tr id="headerRow"></tr>
-        </thead>
+        <thead><tr id="headerRow"></tr></thead>
         <tbody id="tableBody"></tbody>
       </table>
       <div class="empty" id="emptyState">Select a sheet to begin</div>
