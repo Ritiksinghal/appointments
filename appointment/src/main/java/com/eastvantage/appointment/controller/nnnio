@@ -2,26 +2,35 @@ let data = {};
 let currentSheet = '';
 const tableBody = document.getElementById('tableBody');
 const headerRow = document.getElementById('headerRow');
-const sheetSelect = document.getElementById('sheetSelect');
+const sheetButtons = document.getElementById('sheetButtons');
+const sheetTitle = document.getElementById('sheetTitle');
+const dataTable = document.getElementById('dataTable');
+const actionButtons = document.getElementById('actionButtons');
 
 window.onload = async function () {
   const res = await fetch('/api/config/all');
   data = await res.json();
 
   Object.keys(data).forEach(sheet => {
-    const option = document.createElement('option');
-    option.value = option.text = sheet;
-    sheetSelect.appendChild(option);
+    const btn = document.createElement('button');
+    btn.innerText = sheet;
+    btn.onclick = () => selectSheet(sheet, btn);
+    sheetButtons.appendChild(btn);
   });
-
-  currentSheet = sheetSelect.value;
-  renderTable();
-
-  sheetSelect.onchange = () => {
-    currentSheet = sheetSelect.value;
-    renderTable();
-  };
 };
+
+function selectSheet(sheet, clickedBtn) {
+  currentSheet = sheet;
+  sheetTitle.innerText = sheet;
+  dataTable.style.display = 'table';
+  actionButtons.style.display = 'block';
+
+  // Set active button
+  Array.from(sheetButtons.children).forEach(btn => btn.classList.remove('active'));
+  clickedBtn.classList.add('active');
+
+  renderTable();
+}
 
 function renderTable() {
   tableBody.innerHTML = '';
