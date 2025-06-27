@@ -52,11 +52,11 @@ function renderCards() {
       const label = document.createElement('label');
       label.innerText = header;
 
-      const input = document.createElement('input');
-      input.value = row[header] ?? '';
-      input.oninput = (e) => {
-        data[currentSheet][rowIndex][header] = e.target.value;
-      };
+      const input = document.createElement('textarea');
+input.value = row[header] ?? '';
+input.oninput = (e) => {
+  data[currentSheet][rowIndex][header] = e.target.value;
+};
 
       field.appendChild(label);
       field.appendChild(input);
