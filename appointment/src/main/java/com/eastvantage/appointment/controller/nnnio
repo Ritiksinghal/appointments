@@ -1,0 +1,88 @@
+let data = {};
+let currentSheet = '';
+const tableBody = document.getElementById('tableBody');
+const headerRow = document.getElementById('headerRow');
+const sheetSelect = document.getElementById('sheetSelect');
+
+window.onload = async function () {
+  const res = await fetch('/api/config/all');
+  data = await res.json();
+
+  Object.keys(data).forEach(sheet => {
+    const option = document.createElement('option');
+    option.value = option.text = sheet;
+    sheetSelect.appendChild(option);
+  });
+
+  currentSheet = sheetSelect.value;
+  renderTable();
+
+  sheetSelect.onchange = () => {
+    currentSheet = sheetSelect.value;
+    renderTable();
+  };
+};
+
+function renderTable() {
+  tableBody.innerHTML = '';
+  headerRow.innerHTML = '';
+
+  const rows = data[currentSheet] || [];
+  if (rows.length === 0) return;
+
+  const headers = Object.keys(rows[0]);
+
+  headers.forEach(header => {
+    const th = document.createElement('th');
+    th.innerText = header;
+    headerRow.appendChild(th);
+  });
+  headerRow.innerHTML += '<th>Actions</th>';
+
+  rows.forEach((row, rowIndex) => {
+    const tr = document.createElement('tr');
+
+    headers.forEach(header => {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.value = row[header] ?? '';
+      input.oninput = (e) => {
+        data[currentSheet][rowIndex][header] = e.target.value;
+      };
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+
+    const delTd = document.createElement('td');
+    const delBtn = document.createElement('button');
+    delBtn.innerText = 'Delete';
+    delBtn.onclick = () => {
+      data[currentSheet].splice(rowIndex, 1);
+      renderTable();
+    };
+    delTd.appendChild(delBtn);
+    tr.appendChild(delTd);
+
+    tableBody.appendChild(tr);
+  });
+}
+
+function addRow() {
+  const headers = Object.keys(data[currentSheet][0] || {});
+  const newRow = {};
+  headers.forEach(h => newRow[h] = '');
+  data[currentSheet].push(newRow);
+  renderTable();
+}
+
+function save() {
+  fetch('/api/config/update-all', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(res => {
+    if (res.ok) alert('Saved successfully!');
+    else alert('Error saving!');
+  });
+}
