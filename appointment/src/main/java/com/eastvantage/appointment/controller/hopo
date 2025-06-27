@@ -1,0 +1,32 @@
+import openpyxl
+from app.core.config import settings
+from app.core.logger import logger
+
+def read_excel_all_sheets():
+    logger.info("Reading all sheets from Excel")
+    wb = openpyxl.load_workbook(settings.EXCEL_PATH)
+    data = {}
+
+    for sheet in wb.sheetnames:
+        ws = wb[sheet]
+        rows = list(ws.iter_rows(values_only=True))
+
+        if not rows:
+            data[sheet] = []
+            continue
+
+        # First row as header
+        headers = [str(cell).strip() if cell is not None else f"Column{idx}" for idx, cell in enumerate(rows[0])]
+
+        sheet_data = []
+        for row in rows[1:]:
+            # Match row length to header length
+            row_dict = {
+                headers[i]: (row[i] if i < len(row) and row[i] is not None else '')
+                for i in range(len(headers))
+            }
+            sheet_data.append(row_dict)
+
+        data[sheet] = sheet_data
+
+    return data
