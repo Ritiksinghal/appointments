@@ -5,9 +5,7 @@
   <script src="/static/app.js" defer></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -18,7 +16,7 @@
     }
 
     #sidebar {
-      width: 200px;
+      width: 300px;
       background-color: #2f3542;
       color: white;
       padding: 1em;
@@ -39,6 +37,7 @@
       text-align: left;
       cursor: pointer;
       border-radius: 4px;
+      white-space: normal;
     }
 
     #sidebar button.active, #sidebar button:hover {
@@ -47,31 +46,57 @@
 
     #main {
       flex-grow: 1;
-      display: flex;
-      flex-direction: column;
       padding: 1em;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #topBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     #sheetTitle {
-      font-size: 1.2em;
-      margin-bottom: 1em;
+      font-size: 1.4em;
+      color: #2f3542;
+    }
+
+    .toolbar button {
+      background-color: #1e90ff;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      margin-left: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .toolbar button:nth-child(2) {
+      background-color: #ff6b81;
+    }
+
+    .toolbar button:nth-child(3) {
+      background-color: #2ed573;
     }
 
     #tableWrapper {
       overflow-x: auto;
       flex-grow: 1;
+      margin-top: 1em;
     }
 
     table {
-      width: 100%;
       border-collapse: collapse;
-      min-width: 900px;
+      width: 100%;
+      min-width: 1000px;
     }
 
     th, td {
       border: 1px solid #ccc;
-      padding: 6px;
+      padding: 8px;
       text-align: left;
     }
 
@@ -80,12 +105,10 @@
     }
 
     td input {
-      border: none;
-      padding: 6px;
       width: 100%;
-      font-family: inherit;
-      font-size: 14px;
+      border: none;
       background: transparent;
+      font-family: inherit;
     }
 
     td input:focus {
@@ -93,27 +116,23 @@
       background: #eef;
     }
 
-    .actions {
-      margin-top: 1em;
+    .filter-row input {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      padding: 4px;
+      font-size: 13px;
     }
 
-    .actions button {
-      background-color: #1e90ff;
-      color: white;
-      border: none;
-      padding: 8px 14px;
-      margin-right: 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: 500;
+    .checkbox-col {
+      text-align: center;
     }
 
-    .actions button:last-child {
-      background-color: #ff4757;
+    .checkbox-col input {
+      transform: scale(1.2);
     }
 
     .empty {
-      color: #888;
+      color: #999;
       margin-top: 2em;
     }
   </style>
@@ -125,19 +144,24 @@
   </div>
 
   <div id="main">
-    <h2 id="sheetTitle">No sheet selected</h2>
+    <div id="topBar">
+      <h2 id="sheetTitle">No sheet selected</h2>
+      <div class="toolbar">
+        <button onclick="addRow()">➕</button>
+        <button onclick="removeSelected()">➖</button>
+        <button onclick="save()">💾</button>
+      </div>
+    </div>
 
     <div id="tableWrapper">
-      <table id="dataTable" style="display: none;">
-        <thead><tr id="headerRow"></tr></thead>
+      <table id="dataTable" style="display:none;">
+        <thead>
+          <tr id="headerRow"></tr>
+          <tr id="filterRow" class="filter-row"></tr>
+        </thead>
         <tbody id="tableBody"></tbody>
       </table>
       <div class="empty" id="emptyState">Select a sheet to begin</div>
-    </div>
-
-    <div class="actions" id="actionButtons" style="display: none;">
-      <button onclick="addRow()">+ Add Row</button>
-      <button onclick="save()">💾 Save</button>
     </div>
   </div>
 </body>
