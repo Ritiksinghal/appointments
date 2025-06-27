@@ -36,31 +36,57 @@ function selectSheet(sheet, clickedBtn) {
 function renderTable() {
   headerRow.innerHTML = '';
   tableBody.innerHTML = '';
+
   const rows = data[currentSheet] || [];
   if (!rows.length) return;
+
   const headers = Object.keys(rows[0]);
-  headerRow.appendChild(document.createElement('th')); // checkbox col
+
+  // Checkbox column
+  headerRow.appendChild(document.createElement('th'));
+
+  // Header + filter icons
   headers.forEach(header => {
     const th = document.createElement('th');
     th.innerText = header;
+
     const icon = document.createElement('span');
     icon.className = 'filter-icon';
     icon.innerText = '≡';
     icon.onclick = e => showFilterBox(e, header, th);
+
     th.appendChild(icon);
     headerRow.appendChild(th);
   });
 
-  const filtered = rows.map((r, idx) => ({ idx, r }))
-    .filter(({ r }) => Object.entries(filters).every(([k, v]) => {
-      const text = (r[k] ?? '').toString();
-      return filters[k + '_regex']
-        ? new RegExp(v, filters[k + '_case'] ? '' : 'i').test(text)
-        : text.toLowerCase().includes(v);
+  const filteredRows = rows
+    .map((row, idx) => ({ row, idx }))
+    .filter(({ row }) => Object.keys(row).every(key => {
+      if (!(key in filters)) return true;
+      const cell = (row[key] ?? '').toString();
+      const search = filters[key];
+      const isRegex = filters[key + '_regex'];
+      const isCase = filters[key + '_case'];
+
+      if (search === '') return true;
+
+      if (isRegex) {
+        try {
+          const pattern = new RegExp(search, isCase ? '' : 'i');
+          return pattern.test(cell);
+        } catch {
+          return false;
+        }
+      } else {
+        return isCase
+          ? cell.includes(search)
+          : cell.toLowerCase().includes(search.toLowerCase());
+      }
     }));
 
-  filtered.forEach(({ idx, r }) => {
+  filteredRows.forEach(({ row, idx }) => {
     const tr = document.createElement('tr');
+
     const cbTd = document.createElement('td');
     cbTd.className = 'checkbox-col';
     const cb = document.createElement('input');
@@ -70,70 +96,93 @@ function renderTable() {
     cbTd.appendChild(cb);
     tr.appendChild(cbTd);
 
-    headers.forEach(h => {
-      const td = document.createElement('td'),
-            inp = document.createElement('input');
-      inp.value = r[h] ?? '';
-      inp.oninput = e => data[currentSheet][idx][h] = e.target.value;
-      td.appendChild(inp);
+    headers.forEach(header => {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.value = row[header] ?? '';
+      input.oninput = e => data[currentSheet][idx][header] = e.target.value;
+      td.appendChild(input);
       tr.appendChild(td);
     });
+
     tableBody.appendChild(tr);
   });
 }
 
 function showFilterBox(e, header, th) {
-  document.querySelectorAll('.filter-box').forEach(x => x.remove());
-  const box = document.createElement('div'); box.className = 'filter-box';
-  const ip = document.createElement('input');
-  ip.value = filters[header] || '';
-  ip.placeholder = 'Filter...';
-  const lb = document.createElement('label');
-  const ckCase = document.createElement('input');
-  ckCase.type = 'checkbox';
-  const lbCase = document.createElement('label');
-  lbCase.innerText = 'Case';
-  lbCase.style.fontSize = '12px';
-  const ckRegex = document.createElement('input');
-  ckRegex.type = 'checkbox';
-  const lbRegex = document.createElement('label');
-  lbRegex.innerText = 'Regex';
-  lbRegex.style.fontSize = '12px';
-  const clr = document.createElement('span');
-  clr.className = 'clear-filters';
-  clr.innerText = 'Clear';
-  clr.onclick = () => { filters[header] = ''; filters[header + '_regex'] = false; filters[header + '_case'] = false; renderTable(); box.remove(); };
+  document.querySelectorAll('.filter-box').forEach(b => b.remove());
 
-  ip.oninput = () => { filters[header] = ip.value; renderTable(); };
-  ckCase.onchange = () => { filters[header + '_case'] = ckCase.checked; renderTable(); };
-  ckRegex.onchange = () => { filters[header + '_regex'] = ckRegex.checked; renderTable(); };
+  const box = document.createElement('div');
+  box.className = 'filter-box';
 
-  box.append(ip, ckCase, lbCase, ckRegex, lbRegex, clr);
-  th.append(box);
-  ip.focus();
+  const input = document.createElement('input');
+  input.value = filters[header] || '';
+  input.placeholder = 'Filter...';
+  input.oninput = () => {
+    filters[header] = input.value;
+    renderTable();
+  };
+
+  const caseCheckbox = document.createElement('input');
+  caseCheckbox.type = 'checkbox';
+  caseCheckbox.checked = filters[header + '_case'] || false;
+  caseCheckbox.onchange = () => {
+    filters[header + '_case'] = caseCheckbox.checked;
+    renderTable();
+  };
+
+  const regexCheckbox = document.createElement('input');
+  regexCheckbox.type = 'checkbox';
+  regexCheckbox.checked = filters[header + '_regex'] || false;
+  regexCheckbox.onchange = () => {
+    filters[header + '_regex'] = regexCheckbox.checked;
+    renderTable();
+  };
+
+  const caseLabel = document.createElement('label');
+  caseLabel.innerText = 'Case';
+  caseLabel.appendChild(caseCheckbox);
+
+  const regexLabel = document.createElement('label');
+  regexLabel.innerText = 'Regex';
+  regexLabel.appendChild(regexCheckbox);
+
+  const clearBtn = document.createElement('span');
+  clearBtn.className = 'clear-filters';
+  clearBtn.innerText = 'Clear';
+  clearBtn.onclick = () => {
+    delete filters[header];
+    delete filters[header + '_regex'];
+    delete filters[header + '_case'];
+    renderTable();
+    box.remove();
+  };
+
+  box.appendChild(input);
+  box.appendChild(caseLabel);
+  box.appendChild(regexLabel);
+  box.appendChild(clearBtn);
+  th.appendChild(box);
+
+  input.focus();
   e.stopPropagation();
   document.addEventListener('click', () => box.remove(), { once: true });
 }
 
 function addRow() {
   const headers = Object.keys(data[currentSheet][0] || {});
-  const blank = headers.reduce((a, h) => (a[h] = '' , a), {});
+  const blank = {};
+  headers.forEach(h => blank[h] = '');
   data[currentSheet].push(blank);
   renderTable();
 }
 
 function removeSelected() {
-  const chk = tableBody.querySelectorAll('input[type=checkbox]:checked');
-  const idxs = [...chk].map(c => +c.dataset.index);
-  data[currentSheet] = data[currentSheet].filter((_, i) => !idxs.includes(i));
+  const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]:checked');
+  const indexes = new Set([...checkboxes].map(cb => parseInt(cb.dataset.index)));
+  data[currentSheet] = data[currentSheet].filter((_, i) => !indexes.has(i));
   renderTable();
   toggleActions();
-}
-
-function toggleActions() {
-  const any = tableBody.querySelector('input[type=checkbox]:checked');
-  btnRemove.classList.toggle('enabled', !!any);
-  btnSave.classList.toggle('enabled', !!any);
 }
 
 function save() {
@@ -142,5 +191,14 @@ function save() {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  }).then(r => r.ok ? alert('Saved!') : alert('Save failed.'));
+  }).then(res => {
+    if (res.ok) alert('Saved!');
+    else alert('Save failed!');
+  });
+}
+
+function toggleActions() {
+  const checked = tableBody.querySelector('input[type="checkbox"]:checked');
+  btnRemove.classList.toggle('enabled', !!checked);
+  btnSave.classList.toggle('enabled', !!checked);
 }
