@@ -23,12 +23,11 @@ window.onload = async function () {
 function selectSheet(sheet, clickedBtn) {
   currentSheet = sheet;
   sheetTitle.innerText = sheet;
-
   dataTable.style.display = 'table';
   emptyState.style.display = 'none';
   actionButtons.style.display = 'flex';
 
-  // Activate button
+  // Highlight selected button
   Array.from(sheetButtons.children).forEach(btn => btn.classList.remove('active'));
   clickedBtn.classList.add('active');
 
@@ -78,7 +77,7 @@ function renderTable() {
     delBtn.style.background = '#ff4757';
     delBtn.style.color = 'white';
     delBtn.style.border = 'none';
-    delBtn.style.padding = '6px 10px';
+    delBtn.style.padding = '5px 10px';
     delBtn.style.borderRadius = '4px';
     delTd.appendChild(delBtn);
     tr.appendChild(delTd);
@@ -101,8 +100,8 @@ function save() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
   })
-    .then(res => {
-      if (res.ok) alert('Saved successfully!');
-      else alert('Error saving!');
-    });
+  .then(res => {
+    if (res.ok) alert('Saved successfully!');
+    else alert('Error saving!');
+  });
 }
