@@ -1,11 +1,10 @@
 let data = {};
 let currentSheet = '';
-const tableBody = document.getElementById('tableBody');
-const headerRow = document.getElementById('headerRow');
 const sheetButtons = document.getElementById('sheetButtons');
 const sheetTitle = document.getElementById('sheetTitle');
-const dataTable = document.getElementById('dataTable');
+const sheetContent = document.getElementById('sheetContent');
 const actionButtons = document.getElementById('actionButtons');
+const emptyState = document.getElementById('emptyState');
 
 window.onload = async function () {
   const res = await fetch('/api/config/all');
@@ -22,57 +21,61 @@ window.onload = async function () {
 function selectSheet(sheet, clickedBtn) {
   currentSheet = sheet;
   sheetTitle.innerText = sheet;
-  dataTable.style.display = 'table';
-  actionButtons.style.display = 'block';
+  sheetContent.innerHTML = '';
+  actionButtons.style.display = 'flex';
+  emptyState.style.display = 'none';
 
-  // Set active button
   Array.from(sheetButtons.children).forEach(btn => btn.classList.remove('active'));
   clickedBtn.classList.add('active');
 
-  renderTable();
+  renderCards();
 }
 
-function renderTable() {
-  tableBody.innerHTML = '';
-  headerRow.innerHTML = '';
-
+function renderCards() {
   const rows = data[currentSheet] || [];
-  if (rows.length === 0) return;
+
+  if (rows.length === 0) {
+    sheetContent.innerHTML = '<div class="empty">No rows yet.</div>';
+    return;
+  }
 
   const headers = Object.keys(rows[0]);
 
-  headers.forEach(header => {
-    const th = document.createElement('th');
-    th.innerText = header;
-    headerRow.appendChild(th);
-  });
-  headerRow.innerHTML += '<th>Actions</th>';
-
   rows.forEach((row, rowIndex) => {
-    const tr = document.createElement('tr');
+    const card = document.createElement('div');
+    card.className = 'card';
 
     headers.forEach(header => {
-      const td = document.createElement('td');
+      const field = document.createElement('div');
+      field.className = 'field';
+
+      const label = document.createElement('label');
+      label.innerText = header;
+
       const input = document.createElement('input');
       input.value = row[header] ?? '';
       input.oninput = (e) => {
         data[currentSheet][rowIndex][header] = e.target.value;
       };
-      td.appendChild(input);
-      tr.appendChild(td);
+
+      field.appendChild(label);
+      field.appendChild(input);
+      card.appendChild(field);
     });
 
-    const delTd = document.createElement('td');
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
     const delBtn = document.createElement('button');
     delBtn.innerText = 'Delete';
     delBtn.onclick = () => {
       data[currentSheet].splice(rowIndex, 1);
-      renderTable();
+      renderCards();
     };
-    delTd.appendChild(delBtn);
-    tr.appendChild(delTd);
 
-    tableBody.appendChild(tr);
+    actions.appendChild(delBtn);
+    card.appendChild(actions);
+    sheetContent.appendChild(card);
   });
 }
 
@@ -81,7 +84,7 @@ function addRow() {
   const newRow = {};
   headers.forEach(h => newRow[h] = '');
   data[currentSheet].push(newRow);
-  renderTable();
+  renderCards();
 }
 
 function save() {
