@@ -1,12 +1,13 @@
 let data = {};
 let currentSheet = '';
+let filters = {};
 const sheetButtons = document.getElementById('sheetButtons');
 const sheetTitle = document.getElementById('sheetTitle');
 const dataTable = document.getElementById('dataTable');
 const headerRow = document.getElementById('headerRow');
+const filterRow = document.getElementById('filterRow');
 const tableBody = document.getElementById('tableBody');
 const emptyState = document.getElementById('emptyState');
-const actionButtons = document.getElementById('actionButtons');
 
 window.onload = async function () {
   const res = await fetch('/api/config/all');
@@ -22,12 +23,11 @@ window.onload = async function () {
 
 function selectSheet(sheet, clickedBtn) {
   currentSheet = sheet;
+  filters = {};
   sheetTitle.innerText = sheet;
   dataTable.style.display = 'table';
   emptyState.style.display = 'none';
-  actionButtons.style.display = 'flex';
 
-  // Highlight selected button
   Array.from(sheetButtons.children).forEach(btn => btn.classList.remove('active'));
   clickedBtn.classList.add('active');
 
@@ -36,6 +36,7 @@ function selectSheet(sheet, clickedBtn) {
 
 function renderTable() {
   headerRow.innerHTML = '';
+  filterRow.innerHTML = '';
   tableBody.innerHTML = '';
 
   const rows = data[currentSheet] || [];
@@ -43,18 +44,45 @@ function renderTable() {
 
   const headers = Object.keys(rows[0]);
 
+  // Select checkbox column
+  let selectTh = document.createElement('th');
+  selectTh.innerText = '';
+  headerRow.appendChild(selectTh);
+  filterRow.appendChild(document.createElement('th')); // Empty for checkbox
+
   headers.forEach(header => {
     const th = document.createElement('th');
     th.innerText = header;
     headerRow.appendChild(th);
+
+    const filterTd = document.createElement('td');
+    const filterInput = document.createElement('input');
+    filterInput.placeholder = 'Filter...';
+    filterInput.oninput = (e) => {
+      filters[header] = e.target.value.toLowerCase();
+      renderTable(); // re-render filtered
+    };
+    filterTd.appendChild(filterInput);
+    filterRow.appendChild(filterTd);
   });
 
-  const actionTh = document.createElement('th');
-  actionTh.innerText = 'Actions';
-  headerRow.appendChild(actionTh);
+  const filteredRows = rows.filter(row => {
+    return Object.entries(filters).every(([key, val]) =>
+      (row[key] ?? '').toString().toLowerCase().includes(val)
+    );
+  });
 
-  rows.forEach((row, rowIndex) => {
+  filteredRows.forEach((row, rowIndex) => {
     const tr = document.createElement('tr');
+
+    // Select checkbox
+    const checkboxTd = document.createElement('td');
+    checkboxTd.className = 'checkbox-col';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.dataset.index = rowIndex;
+    checkboxTd.appendChild(cb);
+    tr.appendChild(checkboxTd);
 
     headers.forEach(header => {
       const td = document.createElement('td');
@@ -66,21 +94,6 @@ function renderTable() {
       td.appendChild(input);
       tr.appendChild(td);
     });
-
-    const delTd = document.createElement('td');
-    const delBtn = document.createElement('button');
-    delBtn.innerText = 'Delete';
-    delBtn.onclick = () => {
-      data[currentSheet].splice(rowIndex, 1);
-      renderTable();
-    };
-    delBtn.style.background = '#ff4757';
-    delBtn.style.color = 'white';
-    delBtn.style.border = 'none';
-    delBtn.style.padding = '5px 10px';
-    delBtn.style.borderRadius = '4px';
-    delTd.appendChild(delBtn);
-    tr.appendChild(delTd);
 
     tableBody.appendChild(tr);
   });
@@ -94,14 +107,20 @@ function addRow() {
   renderTable();
 }
 
+function removeSelected() {
+  const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]:checked');
+  const indexes = Array.from(checkboxes).map(cb => parseInt(cb.dataset.index));
+  data[currentSheet] = data[currentSheet].filter((_, i) => !indexes.includes(i));
+  renderTable();
+}
+
 function save() {
   fetch('/api/config/update-all', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  })
-  .then(res => {
-    if (res.ok) alert('Saved successfully!');
-    else alert('Error saving!');
+  }).then(res => {
+    if (res.ok) alert('Saved!');
+    else alert('Save failed.');
   });
 }
