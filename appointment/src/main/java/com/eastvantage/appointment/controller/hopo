@@ -1,32 +1,55 @@
 import openpyxl
-from app.core.config import settings
-from app.core.logger import logger
+from pydantic import create_model
+from typing import List, Dict, Any
 
-def read_excel_all_sheets():
-    logger.info("Reading all sheets from Excel")
-    wb = openpyxl.load_workbook(settings.EXCEL_PATH)
-    data = {}
 
-    for sheet in wb.sheetnames:
-        ws = wb[sheet]
-        rows = list(ws.iter_rows(values_only=True))
+def load_excel_to_json_with_pydantic(file_path: str) -> Dict[str, List[Any]]:
+    workbook = openpyxl.load_workbook(file_path)
+    sheets_data = {}
+
+    for sheet_name in workbook.sheetnames:
+        sheet = workbook[sheet_name]
+        rows = list(sheet.iter_rows(values_only=True))
 
         if not rows:
-            data[sheet] = []
+            sheets_data[sheet_name] = []
             continue
 
-        # First row as header
-        headers = [str(cell).strip() if cell is not None else f"Column{idx}" for idx, cell in enumerate(rows[0])]
+        headers = rows[0]
+        data_rows = rows[1:]
 
-        sheet_data = []
-        for row in rows[1:]:
-            # Match row length to header length
-            row_dict = {
-                headers[i]: (row[i] if i < len(row) and row[i] is not None else '')
-                for i in range(len(headers))
-            }
-            sheet_data.append(row_dict)
+        # Dynamic model
+        fields = {str(h): (Any, ...) for h in headers}
+        SheetModel = create_model(f"{sheet_name}Row", **fields)
 
-        data[sheet] = sheet_data
+        parsed_data = []
+        for row in data_rows:
+            data_dict = dict(zip(headers, row))
+            validated_row = SheetModel(**data_dict)
+            parsed_data.append(validated_row)
 
-    return data
+        sheets_data[sheet_name] = parsed_data
+
+    return sheets_data
+
+
+def save_json_to_excel(file_path: str, sheet_name: str, json_data: List[Dict[str, Any]]):
+    workbook = openpyxl.load_workbook(file_path)
+
+    if sheet_name not in workbook.sheetnames:
+        workbook.create_sheet(title=sheet_name)
+
+    sheet = workbook[sheet_name]
+    sheet.delete_rows(1, sheet.max_row)
+
+    if not json_data:
+        workbook.save(file_path)
+        return
+
+    headers = list(json_data[0].keys())
+    sheet.append(headers)
+
+    for row in json_data:
+        sheet.append([row.get(h) for h in headers])
+
+    workbook.save(file_path)
