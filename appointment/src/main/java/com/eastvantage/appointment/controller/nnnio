@@ -1,4 +1,5 @@
 let data = {}, currentSheet = '', filters = {};
+
 const sheetButtons = document.getElementById('sheetButtons'),
       sheetTitle = document.getElementById('sheetTitle'),
       dataTable = document.getElementById('dataTable'),
@@ -9,196 +10,46 @@ const sheetButtons = document.getElementById('sheetButtons'),
       btnRemove = document.getElementById('btnRemove'),
       btnSave = document.getElementById('btnSave');
 
-window.onload = async () => {
-  data = await (await fetch('/api/config/all')).json();
-  Object.keys(data).forEach(sheet => {
+window.onload = () => {
+  const files = ['Recognition Settings', 'Screening Settings'];
+  files.forEach(file => {
     const btn = document.createElement('button');
-    btn.innerText = sheet;
-    btn.onclick = () => selectSheet(sheet, btn);
+    btn.innerText = file;
+    btn.onclick = () => loadFile(file.toLowerCase().includes('recognition') ? 'recognition' : 'screening', btn);
     sheetButtons.appendChild(btn);
   });
 };
 
-function selectSheet(sheet, clickedBtn) {
-  currentSheet = sheet;
+async function loadFile(type, clickedBtn) {
+  currentSheet = '';
+  data = {};
   filters = {};
-  sheetTitle.innerText = sheet;
-  dataTable.style.display = 'table';
-  emptyState.style.display = 'none';
-  toolbar.classList.add('visible');
-  btnRemove.classList.remove('enabled');
-  btnSave.classList.remove('enabled');
+  sheetTitle.innerText = '';
+  tableBody.innerHTML = '';
+  headerRow.innerHTML = '';
+  toolbar.classList.remove('visible');
+  emptyState.style.display = 'block';
+  dataTable.style.display = 'none';
+
+  const res = await fetch(`/${type}`);
+  const result = await res.json();
+  data = result;
+
+  // Clear old buttons
+  Array.from(sheetButtons.children).forEach(child => {
+    if (child.dataset && child.dataset.sheet) child.remove();
+  });
+
+  // Highlight selected file
   Array.from(sheetButtons.children).forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');
-  renderTable();
-}
 
-function renderTable() {
-  headerRow.innerHTML = '';
-  tableBody.innerHTML = '';
-
-  const rows = data[currentSheet] || [];
-  if (!rows.length) return;
-
-  const headers = Object.keys(rows[0]);
-
-  // Checkbox column
-  headerRow.appendChild(document.createElement('th'));
-
-  // Header + filter icons
-  headers.forEach(header => {
-    const th = document.createElement('th');
-    th.innerText = header;
-
-    const icon = document.createElement('span');
-    icon.className = 'filter-icon';
-    icon.innerText = '≡';
-    icon.onclick = e => showFilterBox(e, header, th);
-
-    th.appendChild(icon);
-    headerRow.appendChild(th);
+  // Add buttons for each sheet
+  Object.keys(data).forEach(sheet => {
+    const btn = document.createElement('button');
+    btn.innerText = '📄 ' + sheet;
+    btn.dataset.sheet = 'true';
+    btn.onclick = () => selectSheet(sheet, btn);
+    sheetButtons.appendChild(btn);
   });
-
-  const filteredRows = rows
-    .map((row, idx) => ({ row, idx }))
-    .filter(({ row }) => Object.keys(row).every(key => {
-      if (!(key in filters)) return true;
-      const cell = (row[key] ?? '').toString();
-      const search = filters[key];
-      const isRegex = filters[key + '_regex'];
-      const isCase = filters[key + '_case'];
-
-      if (search === '') return true;
-
-      if (isRegex) {
-        try {
-          const pattern = new RegExp(search, isCase ? '' : 'i');
-          return pattern.test(cell);
-        } catch {
-          return false;
-        }
-      } else {
-        return isCase
-          ? cell.includes(search)
-          : cell.toLowerCase().includes(search.toLowerCase());
-      }
-    }));
-
-  filteredRows.forEach(({ row, idx }) => {
-    const tr = document.createElement('tr');
-
-    const cbTd = document.createElement('td');
-    cbTd.className = 'checkbox-col';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.dataset.index = idx;
-    cb.onclick = () => toggleActions();
-    cbTd.appendChild(cb);
-    tr.appendChild(cbTd);
-
-    headers.forEach(header => {
-      const td = document.createElement('td');
-      const input = document.createElement('input');
-      input.value = row[header] ?? '';
-      input.oninput = e => data[currentSheet][idx][header] = e.target.value;
-      td.appendChild(input);
-      tr.appendChild(td);
-    });
-
-    tableBody.appendChild(tr);
-  });
-}
-
-function showFilterBox(e, header, th) {
-  document.querySelectorAll('.filter-box').forEach(b => b.remove());
-
-  const box = document.createElement('div');
-  box.className = 'filter-box';
-
-  const input = document.createElement('input');
-  input.value = filters[header] || '';
-  input.placeholder = 'Filter...';
-  input.oninput = () => {
-    filters[header] = input.value;
-    renderTable();
-  };
-
-  const caseCheckbox = document.createElement('input');
-  caseCheckbox.type = 'checkbox';
-  caseCheckbox.checked = filters[header + '_case'] || false;
-  caseCheckbox.onchange = () => {
-    filters[header + '_case'] = caseCheckbox.checked;
-    renderTable();
-  };
-
-  const regexCheckbox = document.createElement('input');
-  regexCheckbox.type = 'checkbox';
-  regexCheckbox.checked = filters[header + '_regex'] || false;
-  regexCheckbox.onchange = () => {
-    filters[header + '_regex'] = regexCheckbox.checked;
-    renderTable();
-  };
-
-  const caseLabel = document.createElement('label');
-  caseLabel.innerText = 'Case';
-  caseLabel.appendChild(caseCheckbox);
-
-  const regexLabel = document.createElement('label');
-  regexLabel.innerText = 'Regex';
-  regexLabel.appendChild(regexCheckbox);
-
-  const clearBtn = document.createElement('span');
-  clearBtn.className = 'clear-filters';
-  clearBtn.innerText = 'Clear';
-  clearBtn.onclick = () => {
-    delete filters[header];
-    delete filters[header + '_regex'];
-    delete filters[header + '_case'];
-    renderTable();
-    box.remove();
-  };
-
-  box.appendChild(input);
-  box.appendChild(caseLabel);
-  box.appendChild(regexLabel);
-  box.appendChild(clearBtn);
-  th.appendChild(box);
-
-  input.focus();
-  e.stopPropagation();
-  document.addEventListener('click', () => box.remove(), { once: true });
-}
-
-function addRow() {
-  const headers = Object.keys(data[currentSheet][0] || {});
-  const blank = {};
-  headers.forEach(h => blank[h] = '');
-  data[currentSheet].push(blank);
-  renderTable();
-}
-
-function removeSelected() {
-  const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]:checked');
-  const indexes = new Set([...checkboxes].map(cb => parseInt(cb.dataset.index)));
-  data[currentSheet] = data[currentSheet].filter((_, i) => !indexes.has(i));
-  renderTable();
-  toggleActions();
-}
-
-function save() {
-  if (!btnSave.classList.contains('enabled')) return;
-  fetch('/api/config/update-all', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  }).then(res => {
-    if (res.ok) alert('Saved!');
-    else alert('Save failed!');
-  });
-}
-
-function toggleActions() {
-  const checked = tableBody.querySelector('input[type="checkbox"]:checked');
-  btnRemove.classList.toggle('enabled', !!checked);
-  btnSave.classList.toggle('enabled', !!checked);
 }
