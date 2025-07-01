@@ -3,13 +3,13 @@ colKeys.forEach((col, idx) => {
   th.style.position = 'relative';
   th.style.userSelect = 'none';
   th.style.whiteSpace = 'nowrap';
-  th.style.paddingRight = '24px'; // ⬅️ reserve space for icon
+  th.style.paddingRight = '28px'; // space for icon
 
   const labelSpan = document.createElement('span');
   labelSpan.textContent = col;
 
   const hideIcon = document.createElement('span');
-  hideIcon.innerHTML = '&#x1f441;&#x200d;&#x1f5e8;'; // 👁️‍🗨️
+  hideIcon.innerHTML = '&#x1f441;&#x200d;&#x1f5e8;';
   hideIcon.title = 'Hide Column';
   hideIcon.style.cursor = 'pointer';
   hideIcon.style.position = 'absolute';
@@ -18,7 +18,8 @@ colKeys.forEach((col, idx) => {
   hideIcon.style.transform = 'translateY(-50%)';
   hideIcon.style.fontSize = '14px';
   hideIcon.style.opacity = '0.7';
-  hideIcon.style.backgroundColor = '#eee'; // optional: matches header bg
+  hideIcon.style.paddingLeft = '6px';
+  hideIcon.style.paddingRight = '2px';
 
   hideIcon.onclick = () => {
     hiddenCols.add(idx);
@@ -29,3 +30,19 @@ colKeys.forEach((col, idx) => {
 
   th.appendChild(labelSpan);
   th.appendChild(hideIcon);
+
+  // ⚡ Adjust min-width based on text length
+  const estimatedWidth = Math.max(100, col.length * 8 + 40); // +40 for icon spacing
+  th.style.minWidth = estimatedWidth + 'px';
+  th.style.maxWidth = '300px';
+  th.style.overflow = 'hidden';
+
+  // Optional: Resize handle remains same
+  const resizer = document.createElement('div');
+  resizer.className = 'col-resizer';
+  th.appendChild(resizer);
+
+  // ...resizer drag logic remains unchanged
+
+  header.appendChild(th);
+});
