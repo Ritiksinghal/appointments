@@ -1,1 +1,22 @@
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+const columnToggleDiv = document.createElement('div');
+columnToggleDiv.style.textAlign = 'right';
+columnToggleDiv.style.marginBottom = '10px';
+
+const toggleBtn = document.createElement('button');
+toggleBtn.textContent = 'Hide/Show Columns';
+toggleBtn.style.padding = '4px 10px';
+toggleBtn.style.cursor = 'pointer';
+
+const checkboxContainer = document.createElement('div');
+checkboxContainer.style.display = 'none';
+checkboxContainer.style.textAlign = 'left';
+checkboxContainer.style.marginTop = '8px';
+
+// Show/hide checkboxes
+toggleBtn.onclick = () => {
+  checkboxContainer.style.display = checkboxContainer.style.display === 'none' ? 'block' : 'none';
+};
+
+columnToggleDiv.appendChild(toggleBtn);
+contentDiv.appendChild(columnToggleDiv);
+contentDiv.appendChild(checkboxContainer);
