@@ -1,199 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Excel Config Editor</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-      background: #f4f4f4;
-      color: #333;
-    }
+const sidebar = document.getElementById("sidebar");
+const toggleBtn = document.getElementById("toggleBtn");
 
-    #app {
-      display: flex;
-      height: 100vh;
-      overflow: hidden;
-    }
+toggleBtn.onclick = () => {
+  sidebar.classList.toggle("collapsed");
+};
 
-    #sidebar {
-      background: #ffffff;
-      border-right: 1px solid #ddd;
-      padding: 8px;
-      width: auto;
-      min-width: max-content;
-      transition: transform 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+// Auto-collapse after selecting a sheet
+function selectSheet(sheet, clickedBtn) {
+  currentSheet = sheet;
+  filters = {};
+  sheetTitle.innerText = sheet;
+  dataTable.style.display = 'table';
+  emptyState.style.display = 'none';
+  toolbar.classList.add('visible');
+  btnRemove.classList.remove('enabled');
+  btnSave.classList.remove('enabled');
 
-    #sidebar.collapsed {
-      transform: translateX(-100%);
-    }
+  Array.from(sheetButtons.children).forEach(b => b.classList.remove('active'));
+  clickedBtn.classList.add('active');
 
-    #toggleBtn {
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      margin-bottom: 8px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    #sheetButtons button {
-      display: block;
-      background: #eee;
-      border: none;
-      padding: 6px 12px;
-      margin-bottom: 4px;
-      text-align: left;
-      cursor: pointer;
-      border-radius: 3px;
-      white-space: nowrap;
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    #sheetButtons button.active {
-      background: #007bff;
-      color: white;
-    }
-
-    #main {
-      flex: 1;
-      padding: 16px;
-      overflow: auto;
-    }
-
-    #topBar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    #toolbar button {
-      margin-left: 10px;
-      padding: 6px 12px;
-      border: none;
-      background: #ccc;
-      color: #333;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    #toolbar button.enabled {
-      background: #28a745;
-      color: white;
-    }
-
-    #toolbar button.disabled {
-      background: #eee;
-      color: #aaa;
-      pointer-events: none;
-    }
-
-    #emptyState {
-      text-align: center;
-      font-size: 18px;
-      margin-top: 60px;
-    }
-
-    #dataTable {
-      max-height: calc(100vh - 120px);
-      overflow: auto;
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    thead th {
-      position: sticky;
-      top: 0;
-      background: #f1f1f1;
-      border-bottom: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-      z-index: 1;
-    }
-
-    tbody td {
-      padding: 6px;
-      border-bottom: 1px solid #eee;
-    }
-
-    tbody tr:nth-child(even) {
-      background: #fafafa;
-    }
-
-    input[type="text"], input[type="checkbox"] {
-      width: 100%;
-      padding: 4px;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-    }
-
-    .filter-icon {
-      margin-left: 6px;
-      cursor: pointer;
-      color: gray;
-    }
-
-    .filter-box {
-      position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      padding: 8px;
-      z-index: 10;
-    }
-
-    .clear-filters {
-      font-size: 12px;
-      color: red;
-      float: right;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div id="app">
-    <!-- Left Panel -->
-    <div id="sidebar">
-      <button id="toggleBtn">☰</button>
-      <div id="sheetButtons"></div>
-    </div>
-
-    <!-- Main Content -->
-    <div id="main">
-      <div id="topBar">
-        <h2 id="sheetTitle">Select a sheet</h2>
-        <div id="toolbar" class="hidden">
-          <button onclick="addRow()">＋ Add</button>
-          <button id="btnRemove" class="disabled" onclick="removeSelected()">– Remove</button>
-          <button id="btnSave" class="disabled" onclick="save()">💾 Save</button>
-        </div>
-      </div>
-
-      <div id="emptyState">No sheet selected.</div>
-
-      <div id="dataTable" class="hidden">
-        <table>
-          <thead><tr id="headerRow"></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+  sidebar.classList.add('collapsed'); // <-- THIS LINE auto-hides the sidebar
+  renderTable();
+}
