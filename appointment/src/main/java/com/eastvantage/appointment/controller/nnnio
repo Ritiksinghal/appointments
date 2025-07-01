@@ -2,95 +2,198 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Excel Config Editor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .filter-box {
-      @apply absolute z-10 bg-white border border-gray-300 shadow p-2 space-y-2;
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #f4f4f4;
+      color: #333;
     }
-    input[type="text"], input[type="checkbox"] {
-      @apply border border-gray-300 rounded px-2 py-1 w-full;
+
+    #app {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
     }
-    table input {
-      @apply w-full bg-transparent outline-none;
+
+    #sidebar {
+      background: #ffffff;
+      border-right: 1px solid #ddd;
+      padding: 8px;
+      width: auto;
+      min-width: max-content;
+      transition: transform 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
+
+    #sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    #toggleBtn {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    #sheetButtons button {
+      display: block;
+      background: #eee;
+      border: none;
+      padding: 6px 12px;
+      margin-bottom: 4px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 3px;
+      white-space: nowrap;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #sheetButtons button.active {
+      background: #007bff;
+      color: white;
+    }
+
+    #main {
+      flex: 1;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    #topBar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    #toolbar button {
+      margin-left: 10px;
+      padding: 6px 12px;
+      border: none;
+      background: #ccc;
+      color: #333;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    #toolbar button.enabled {
+      background: #28a745;
+      color: white;
+    }
+
+    #toolbar button.disabled {
+      background: #eee;
+      color: #aaa;
+      pointer-events: none;
+    }
+
+    #emptyState {
+      text-align: center;
+      font-size: 18px;
+      margin-top: 60px;
+    }
+
+    #dataTable {
+      max-height: calc(100vh - 120px);
+      overflow: auto;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
     thead th {
-      @apply bg-gray-100 sticky top-0 z-10 text-sm text-left px-2 py-1;
+      position: sticky;
+      top: 0;
+      background: #f1f1f1;
+      border-bottom: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+      z-index: 1;
     }
+
     tbody td {
-      @apply px-2 py-1;
+      padding: 6px;
+      border-bottom: 1px solid #eee;
     }
-    .enabled {
-      @apply bg-blue-600 text-white cursor-pointer;
+
+    tbody tr:nth-child(even) {
+      background: #fafafa;
     }
+
+    input[type="text"], input[type="checkbox"] {
+      width: 100%;
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
     .filter-icon {
-      @apply ml-2 cursor-pointer text-gray-500 hover:text-blue-500;
+      margin-left: 6px;
+      cursor: pointer;
+      color: gray;
     }
+
+    .filter-box {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 8px;
+      z-index: 10;
+    }
+
     .clear-filters {
-      @apply text-sm text-red-500 cursor-pointer float-right;
+      font-size: 12px;
+      color: red;
+      float: right;
+      cursor: pointer;
     }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-  <!-- Top Navbar -->
-  <div class="flex items-center justify-between bg-blue-600 text-white px-4 py-2 shadow sticky top-0 z-50">
-    <div class="flex items-center gap-2">
-      <button id="toggleDrawer" class="text-2xl font-bold">☰</button>
-      <span id="sheetTitle" class="text-lg font-semibold">Excel Config Editor</span>
-    </div>
-    <div id="toolbar" class="space-x-2 hidden sm:flex">
-      <button onclick="addRow()" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded">＋ Add</button>
-      <button id="btnRemove" onclick="removeSelected()" class="px-3 py-1 rounded bg-gray-300 text-gray-600">– Remove</button>
-      <button id="btnSave" onclick="save()" class="px-3 py-1 rounded bg-gray-300 text-gray-600">💾 Save</button>
-    </div>
-  </div>
-
-  <!-- Layout: Drawer + Content -->
-  <div class="flex h-[calc(100vh-56px)]">
-    <!-- Left Drawer -->
-    <div id="drawer" class="w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto transition-transform transform -translate-x-full fixed sm:relative sm:translate-x-0 z-40 sm:z-auto h-full sm:h-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="font-semibold text-gray-700">Files</h2>
-        <button id="collapseDrawer" class="text-xl text-gray-500 hover:text-black sm:hidden">⯈</button>
-      </div>
-      <div id="sheetButtons" class="flex flex-col gap-2"></div>
+<body>
+  <div id="app">
+    <!-- Left Panel -->
+    <div id="sidebar">
+      <button id="toggleBtn">☰</button>
+      <div id="sheetButtons"></div>
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 overflow-auto p-4">
-      <div id="emptyState" class="text-center text-gray-500 mt-20">Select a sheet to view data.</div>
+    <div id="main">
+      <div id="topBar">
+        <h2 id="sheetTitle">Select a sheet</h2>
+        <div id="toolbar" class="hidden">
+          <button onclick="addRow()">＋ Add</button>
+          <button id="btnRemove" class="disabled" onclick="removeSelected()">– Remove</button>
+          <button id="btnSave" class="disabled" onclick="save()">💾 Save</button>
+        </div>
+      </div>
 
-      <div class="overflow-auto border rounded shadow bg-white hidden" id="dataTable">
-        <table class="min-w-full table-fixed border-collapse">
-          <thead>
-            <tr id="headerRow"></tr>
-          </thead>
-          <tbody id="tableBody" class="text-sm"></tbody>
+      <div id="emptyState">No sheet selected.</div>
+
+      <div id="dataTable" class="hidden">
+        <table>
+          <thead><tr id="headerRow"></tr></thead>
+          <tbody id="tableBody"></tbody>
         </table>
       </div>
     </div>
   </div>
 
   <script src="app.js"></script>
-  <script>
-    // Drawer toggle behavior
-    const drawer = document.getElementById("drawer");
-    const toggleDrawerBtn = document.getElementById("toggleDrawer");
-    const collapseDrawerBtn = document.getElementById("collapseDrawer");
-
-    toggleDrawerBtn.onclick = () => {
-      drawer.classList.toggle("-translate-x-full");
-    };
-
-    collapseDrawerBtn.onclick = () => {
-      drawer.classList.add("-translate-x-full");
-    };
-
-    // Auto-close drawer on sheet select (hooked from JS later)
-    function closeDrawer() {
-      if (window.innerWidth < 640) drawer.classList.add("-translate-x-full");
-    }
-  </script>
 </body>
 </html>
