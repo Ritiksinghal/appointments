@@ -1,41 +1,43 @@
-function showSheets(type) {
-  currentType = type;
-
+function loadSheet(type, sheetName) {
   const loader = document.getElementById('loader');
   loader.style.display = 'flex';
 
-  fetch(`/${type}`)
-    .then(async res => {
-      if (!res.ok) {
-        throw new Error(`Server error: ${res.status}`);
-      }
-      const data = await res.json();
+  try {
+    const sheetData = excelData[type][sheetName];
+    const contentDiv = document.getElementById('content');
+    contentDiv.innerHTML = ''; // clear previous content
 
-      excelData[type] = data;
-
-      // Hide loader after successful fetch
+    if (!sheetData || !sheetData.length) {
       loader.style.display = 'none';
+      contentDiv.innerHTML = '<p>No data available in this sheet.</p>';
+      return;
+    }
 
-      document.getElementById('fileOptions').style.display = 'none';
-      document.getElementById('sheetList').style.display = 'block';
+    const table = document.createElement('table');
+    const header = document.createElement('tr');
 
-      const sheetButtonsDiv = document.getElementById('sheetButtons');
-      sheetButtonsDiv.innerHTML = '';
-
-      Object.keys(data).forEach(sheetName => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = sheetName;
-        btn.onclick = () => loadSheet(type, sheetName);
-        sheetButtonsDiv.appendChild(btn);
-      });
-    })
-    .catch(err => {
-      console.error('Fetch error:', err);
-      alert(`Failed to load ${type} file`);
-    })
-    .finally(() => {
-      // Hide spinner no matter what
-      loader.style.display = 'none';
+    Object.keys(sheetData[0]).forEach(col => {
+      const th = document.createElement('th');
+      th.textContent = col;
+      header.appendChild(th);
     });
+    table.appendChild(header);
+
+    sheetData.forEach(row => {
+      const tr = document.createElement('tr');
+      Object.values(row).forEach(cell => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+
+    contentDiv.appendChild(table);
+  } catch (err) {
+    console.error('Error rendering sheet:', err);
+    alert('Failed to render sheet.');
+  } finally {
+    loader.style.display = 'none';
+  }
 }
