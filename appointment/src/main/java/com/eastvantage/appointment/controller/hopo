@@ -1,55 +1,24 @@
-import openpyxl
-from pydantic import create_model
-from typing import List, Dict, Any
+from app.config import RECOGNITION_FILE_PATH, SCREENING_FILE_PATH
+from app.utils.excel_loader import (
+    load_excel_to_json_with_pydantic,
+    save_json_to_excel,
+)
+from typing import Dict, List, Any
 
 
-def load_excel_to_json_with_pydantic(file_path: str) -> Dict[str, List[Any]]:
-    workbook = openpyxl.load_workbook(file_path)
-    sheets_data = {}
-
-    for sheet_name in workbook.sheetnames:
-        sheet = workbook[sheet_name]
-        rows = list(sheet.iter_rows(values_only=True))
-
-        if not rows:
-            sheets_data[sheet_name] = []
-            continue
-
-        headers = rows[0]
-        data_rows = rows[1:]
-
-        # Dynamic model
-        fields = {str(h): (Any, ...) for h in headers}
-        SheetModel = create_model(f"{sheet_name}Row", **fields)
-
-        parsed_data = []
-        for row in data_rows:
-            data_dict = dict(zip(headers, row))
-            validated_row = SheetModel(**data_dict)
-            parsed_data.append(validated_row)
-
-        sheets_data[sheet_name] = parsed_data
-
-    return sheets_data
+def get_data(file_type: str) -> Dict[str, List[Any]]:
+    if file_type == "recognition":
+        return load_excel_to_json_with_pydantic(RECOGNITION_FILE_PATH)
+    elif file_type == "screening":
+        return load_excel_to_json_with_pydantic(SCREENING_FILE_PATH)
+    else:
+        raise ValueError("Invalid file type")
 
 
-def save_json_to_excel(file_path: str, sheet_name: str, json_data: List[Dict[str, Any]]):
-    workbook = openpyxl.load_workbook(file_path)
-
-    if sheet_name not in workbook.sheetnames:
-        workbook.create_sheet(title=sheet_name)
-
-    sheet = workbook[sheet_name]
-    sheet.delete_rows(1, sheet.max_row)
-
-    if not json_data:
-        workbook.save(file_path)
-        return
-
-    headers = list(json_data[0].keys())
-    sheet.append(headers)
-
-    for row in json_data:
-        sheet.append([row.get(h) for h in headers])
-
-    workbook.save(file_path)
+def save_data(file_type: str, sheet_name: str, json_data: List[Dict[str, Any]]):
+    if file_type == "recognition":
+        save_json_to_excel(RECOGNITION_FILE_PATH, sheet_name, json_data)
+    elif file_type == "screening":
+        save_json_to_excel(SCREENING_FILE_PATH, sheet_name, json_data)
+    else:
+        raise ValueError("Invalid file type")
