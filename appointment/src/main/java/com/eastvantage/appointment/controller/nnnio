@@ -1,71 +1,121 @@
-let excelData = {
-  recognition: {},
-  screening: {}
-};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trade AI</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-document.getElementById('toggleSidebar').addEventListener('click', () => {
-  const sidebar = document.getElementById('sidebar');
-  const toggleBtn = document.getElementById('toggleSidebar');
+    #topbar {
+      height: 60px;
+      background-color: #222;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
 
-  if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-    sidebar.style.display = 'block';
-    toggleBtn.innerHTML = '&#x25C0;'; // left arrow
-  } else {
-    sidebar.style.display = 'none';
-    toggleBtn.innerHTML = '&#x25B6;'; // right arrow
-  }
-});
+    #toggleSidebar {
+      position: absolute;
+      left: 15px;
+      top: 15px;
+      cursor: pointer;
+      background-color: #444;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      font-size: 18px;
+      border-radius: 4px;
+    }
 
-function loadExcelFile(type) {
-  fetch(`/${type}`)
-    .then(res => res.json())
-    .then(data => {
-      excelData[type] = data;
-      const sheetSelect = document.getElementById(`${type}Sheets`);
-      sheetSelect.innerHTML = '';
+    #container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
 
-      Object.keys(data).forEach(sheetName => {
-        const option = document.createElement('option');
-        option.value = sheetName;
-        option.textContent = sheetName;
-        sheetSelect.appendChild(option);
-      });
-    })
-    .catch(err => {
-      alert(`Failed to load ${type} file`);
-      console.error(err);
-    });
-}
+    #sidebar {
+      width: 250px;
+      background-color: #f0f0f0;
+      padding: 10px;
+      display: none;
+      flex-shrink: 0;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+    }
 
-function loadSheet(type) {
-  const dropdown = document.getElementById(`${type}Sheets`);
-  const sheetName = dropdown.value;
-  const sheetData = excelData[type][sheetName];
+    #content {
+      flex-grow: 1;
+      padding: 20px;
+      overflow: auto;
+    }
 
-  if (!sheetData || !sheetData.length) return;
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-weight: bold;
+      background-color: #ddd;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      text-align: left;
+    }
 
-  const contentDiv = document.getElementById('content');
-  contentDiv.innerHTML = ''; // clear
+    .back-btn {
+      background-color: #bbb;
+      font-size: 14px;
+    }
 
-  const table = document.createElement('table');
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
+    }
 
-  const header = document.createElement('tr');
-  Object.keys(sheetData[0]).forEach(col => {
-    const th = document.createElement('th');
-    th.textContent = col;
-    header.appendChild(th);
-  });
-  table.appendChild(header);
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
 
-  sheetData.forEach(row => {
-    const tr = document.createElement('tr');
-    Object.values(row).forEach(cell => {
-      const td = document.createElement('td');
-      td.textContent = cell;
-      tr.appendChild(td);
-    });
-    table.appendChild(tr);
-  });
+    th {
+      background-color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <div id="topbar">
+    <button id="toggleSidebar">&#x25B6;</button>
+    <h1>Trade AI</h1>
+  </div>
 
-  contentDiv.appendChild(table);
-}
+  <div id="container">
+    <div id="sidebar">
+      <div id="fileOptions">
+        <button class="btn" onclick="showSheets('recognition')">Recognition Settings</button>
+        <button class="btn" onclick="showSheets('screening')">Screening Settings</button>
+      </div>
+
+      <div id="sheetList" style="display: none;">
+        <button class="btn back-btn" onclick="backToFiles()">← Back</button>
+        <div id="sheetButtons"></div>
+      </div>
+    </div>
+
+    <div id="content">
+      <!-- Table gets inserted here -->
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
