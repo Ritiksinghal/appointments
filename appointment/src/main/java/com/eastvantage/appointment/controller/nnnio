@@ -1,82 +1,27 @@
-let excelData = {
-  recognition: {},
-  screening: {}
-};
-let currentType = "";
+#loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255,255,255,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
 
-document.getElementById('toggleSidebar').addEventListener('click', () => {
-  const sidebar = document.getElementById('sidebar');
-  const toggleBtn = document.getElementById('toggleSidebar');
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 6px solid #ccc;
+  border-top-color: #333;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
 
-  if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-    sidebar.style.display = 'block';
-    toggleBtn.innerHTML = '&#x25C0;';
-  } else {
-    sidebar.style.display = 'none';
-    toggleBtn.innerHTML = '&#x25B6;';
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
-});
-
-function showSheets(type) {
-  currentType = type;
-
-  fetch(`/${type}`)
-    .then(res => res.json())
-    .then(data => {
-      excelData[type] = data;
-
-      // Switch view
-      document.getElementById('fileOptions').style.display = 'none';
-      document.getElementById('sheetList').style.display = 'block';
-
-      const sheetButtonsDiv = document.getElementById('sheetButtons');
-      sheetButtonsDiv.innerHTML = '';
-
-      Object.keys(data).forEach(sheetName => {
-        const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.textContent = sheetName;
-        btn.onclick = () => loadSheet(type, sheetName);
-        sheetButtonsDiv.appendChild(btn);
-      });
-    })
-    .catch(err => {
-      alert(`Failed to load ${type} file`);
-      console.error(err);
-    });
-}
-
-function backToFiles() {
-  document.getElementById('sheetList').style.display = 'none';
-  document.getElementById('fileOptions').style.display = 'block';
-}
-
-function loadSheet(type, sheetName) {
-  const sheetData = excelData[type][sheetName];
-  const contentDiv = document.getElementById('content');
-  contentDiv.innerHTML = ''; // clear
-
-  if (!sheetData || !sheetData.length) return;
-
-  const table = document.createElement('table');
-  const header = document.createElement('tr');
-
-  Object.keys(sheetData[0]).forEach(col => {
-    const th = document.createElement('th');
-    th.textContent = col;
-    header.appendChild(th);
-  });
-  table.appendChild(header);
-
-  sheetData.forEach(row => {
-    const tr = document.createElement('tr');
-    Object.values(row).forEach(cell => {
-      const td = document.createElement('td');
-      td.textContent = cell;
-      tr.appendChild(td);
-    });
-    table.appendChild(tr);
-  });
-
-  contentDiv.appendChild(table);
 }
