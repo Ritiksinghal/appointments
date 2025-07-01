@@ -7,15 +7,24 @@ function loadSheet(type, sheetName) {
     const contentDiv = document.getElementById('content');
     contentDiv.innerHTML = ''; // clear previous content
 
+    // Sheet name
+    const sheetTitle = document.createElement('h2');
+    sheetTitle.textContent = sheetName;
+    sheetTitle.style.margin = '0';
+    sheetTitle.style.padding = '10px 0';
+    sheetTitle.style.textAlign = 'left';
+    contentDiv.appendChild(sheetTitle);
+
     if (!sheetData || !sheetData.length) {
       loader.style.display = 'none';
-      contentDiv.innerHTML = '<p>No data available in this sheet.</p>';
+      contentDiv.innerHTML += '<p>No data available in this sheet.</p>';
       return;
     }
 
     const table = document.createElement('table');
-    const header = document.createElement('tr');
+    table.classList.add('sheet-table'); // for styling
 
+    const header = document.createElement('tr');
     Object.keys(sheetData[0]).forEach(col => {
       const th = document.createElement('th');
       th.textContent = col;
