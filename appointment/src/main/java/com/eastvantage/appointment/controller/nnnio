@@ -1,52 +1,18 @@
-function loadSheet(type, sheetName) {
-  const loader = document.getElementById('loader');
-  loader.style.display = 'flex';
+.sheet-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 10px;
+}
 
-  try {
-    const sheetData = excelData[type][sheetName];
-    const contentDiv = document.getElementById('content');
-    contentDiv.innerHTML = ''; // clear previous content
+.sheet-table th, .sheet-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
 
-    // Sheet name
-    const sheetTitle = document.createElement('h2');
-    sheetTitle.textContent = sheetName;
-    sheetTitle.style.margin = '0';
-    sheetTitle.style.padding = '10px 0';
-    sheetTitle.style.textAlign = 'left';
-    contentDiv.appendChild(sheetTitle);
-
-    if (!sheetData || !sheetData.length) {
-      loader.style.display = 'none';
-      contentDiv.innerHTML += '<p>No data available in this sheet.</p>';
-      return;
-    }
-
-    const table = document.createElement('table');
-    table.classList.add('sheet-table'); // for styling
-
-    const header = document.createElement('tr');
-    Object.keys(sheetData[0]).forEach(col => {
-      const th = document.createElement('th');
-      th.textContent = col;
-      header.appendChild(th);
-    });
-    table.appendChild(header);
-
-    sheetData.forEach(row => {
-      const tr = document.createElement('tr');
-      Object.values(row).forEach(cell => {
-        const td = document.createElement('td');
-        td.textContent = cell;
-        tr.appendChild(td);
-      });
-      table.appendChild(tr);
-    });
-
-    contentDiv.appendChild(table);
-  } catch (err) {
-    console.error('Error rendering sheet:', err);
-    alert('Failed to render sheet.');
-  } finally {
-    loader.style.display = 'none';
-  }
+.sheet-table th {
+  background-color: #eee;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
