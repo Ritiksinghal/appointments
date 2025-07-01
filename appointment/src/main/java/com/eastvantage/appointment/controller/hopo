@@ -134,62 +134,6 @@
     </div>
   </div>
 
-  <script>
-    async function loadFile(type) {
-      const res = await fetch(`/${type}`);
-      const data = await res.json();
-
-      const sheetListEl = document.getElementById(`${type}-sheets`);
-      sheetListEl.innerHTML = '';
-
-      Object.keys(data).forEach(sheetName => {
-        const el = document.createElement('div');
-        el.className = 'sheet';
-        el.innerText = `📄 ${sheetName}`;
-        el.onclick = () => renderSheet(sheetName, data[sheetName]);
-        sheetListEl.appendChild(el);
-      });
-    }
-
-    function renderSheet(sheetName, rows) {
-      const title = document.getElementById('sheet-title');
-      title.innerText = sheetName;
-
-      const container = document.getElementById('table-container');
-      container.innerHTML = '';
-
-      if (rows.length === 0) {
-        container.innerText = 'No data in sheet';
-        return;
-      }
-
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-
-      Object.keys(rows[0]).forEach(key => {
-        const th = document.createElement('th');
-        th.innerText = key;
-        headerRow.appendChild(th);
-      });
-
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      rows.forEach(row => {
-        const tr = document.createElement('tr');
-        Object.values(row).forEach(val => {
-          const td = document.createElement('td');
-          td.innerText = val ?? '';
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(tbody);
-      container.appendChild(table);
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
