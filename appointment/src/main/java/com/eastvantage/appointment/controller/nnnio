@@ -1,14 +1,4 @@
-.hide-toggle-btn {
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  padding: 4px 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-  line-height: 1;
-}
-
-.hide-toggle-btn:hover {
-  background-color: #e0e0e0;
-}
+const hideBtn = document.createElement('button');
+hideBtn.className = 'hide-toggle-btn';
+hideBtn.innerHTML = '📑';
+hideBtn.title = 'Toggle column visibility';
