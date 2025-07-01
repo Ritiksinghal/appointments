@@ -1,5 +1,40 @@
-from fastapi import FastAPI
-from app.routes.api import router
+import openpyxl
+from openpyxl.utils import get_column_letter
+from app.core.config import settings
+from app.core.logger import logger
 
-app = FastAPI(title="Excel Sheet JSON API")
-app.include_router(router)
+def write_excel_all_sheets(data: dict):
+    logger.info("Writing updated data to Excel")
+
+    # Load or create workbook
+    try:
+        wb = openpyxl.load_workbook(settings.EXCEL_PATH)
+    except FileNotFoundError:
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)  # remove default sheet
+
+    for sheet_name, rows in data.items():
+        if sheet_name in wb.sheetnames:
+            wb.remove(wb[sheet_name])
+
+        ws = wb.create_sheet(title=sheet_name)
+
+        if not rows:
+            continue
+
+        # Write headers
+        headers = list(rows[0].keys())
+        ws.append(headers)
+
+        # Write rows
+        for row in rows:
+            ws.append([row.get(h) for h in headers])
+
+        # Auto column width (optional)
+        for i, col in enumerate(headers, start=1):
+            col_letter = get_column_letter(i)
+            max_length = max((len(str(row.get(col) or '')) for row in rows), default=0)
+            ws.column_dimensions[col_letter].width = max_length + 2
+
+    wb.save(settings.EXCEL_PATH)
+    logger.info("Excel saved successfully")
