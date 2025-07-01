@@ -1,43 +1,185 @@
-th {
-  position: relative;
-}
+function loadSheet(type, sheetName) {
+  const loader = document.getElementById('loader');
+  loader.style.display = 'flex';
 
-.hide-icon {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  font-size: 12px;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
+  // Auto-close sidebar
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('toggleSidebar').innerHTML = '&#x25B6;'; // ▶
 
-th:hover .hide-icon {
-  opacity: 1;
-}
+  try {
+    const sheetData = excelData[type][sheetName];
+    const contentDiv = document.getElementById('content');
+    contentDiv.innerHTML = ''; // clear previous content
 
-/* Hidden column manager */
-#hiddenColumnsPanel {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  z-index: 10;
-  font-size: 12px;
-  background: #f5f5f5;
-  padding: 6px 10px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  display: none;
-}
+    const capitalizeFirst = (str) =>
+      str.charAt(0).toUpperCase() + str.slice(1).toLowerCase().replace(/_/g, ' ');
 
-#hiddenColumnsPanel span {
-  margin-right: 8px;
-  cursor: pointer;
-  text-decoration: underline;
-}
+    // === SHEET TITLE ===
+    const fileLabel =
+      type === 'recognition'
+        ? 'Recognition Settings'
+        : type === 'screening'
+        ? 'Screening Settings'
+        : type;
 
-#hiddenColumnsPanel .restore-all {
-  font-weight: bold;
-  float: right;
-  cursor: pointer;
+    const sheetTitleBar = document.createElement('div');
+    sheetTitleBar.id = 'sheetTitleBar';
+    sheetTitleBar.style.position = 'sticky';
+    sheetTitleBar.style.top = '0';
+    sheetTitleBar.style.backgroundColor = 'white';
+    sheetTitleBar.style.zIndex = '3';
+    sheetTitleBar.style.padding = '10px 0';
+    sheetTitleBar.style.borderBottom = '1px solid #ccc';
+
+    const sheetTitle = document.createElement('h2');
+    sheetTitle.textContent = `${fileLabel} / ${capitalizeFirst(sheetName)}`;
+    sheetTitle.style.margin = '0';
+    sheetTitle.style.fontSize = '16px';
+    sheetTitle.style.textAlign = 'left';
+
+    sheetTitleBar.appendChild(sheetTitle);
+    contentDiv.appendChild(sheetTitleBar);
+
+    if (!sheetData || !sheetData.length) {
+      loader.style.display = 'none';
+      contentDiv.innerHTML += '<p>No data available in this sheet.</p>';
+      return;
+    }
+
+    // === VIEW MODE TOGGLE ===
+    const viewToggle = document.createElement('div');
+    viewToggle.id = 'viewOptions';
+    viewToggle.style.textAlign = 'right';
+    viewToggle.style.margin = '10px 0';
+
+    viewToggle.innerHTML = `
+      <label>
+        <input type="radio" name="viewMode" value="comfortable" checked> Comfortable
+      </label>
+      <label style="margin-left: 10px;">
+        <input type="radio" name="viewMode" value="compact"> Compact
+      </label>
+    `;
+
+    contentDiv.appendChild(viewToggle);
+    viewToggle.querySelectorAll('input[name="viewMode"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'compact') {
+          contentDiv.classList.add('compact-mode');
+        } else {
+          contentDiv.classList.remove('compact-mode');
+        }
+      });
+    });
+
+    // === HIDDEN COLUMNS PANEL ===
+    const hiddenColumnsPanel = document.createElement('div');
+    hiddenColumnsPanel.id = 'hiddenColumnsPanel';
+    hiddenColumnsPanel.style.display = 'none';
+
+    const hiddenColList = document.createElement('span');
+    const restoreBtn = document.createElement('span');
+    restoreBtn.textContent = '🧹 Show All';
+    restoreBtn.classList.add('restore-all');
+
+    hiddenColumnsPanel.appendChild(hiddenColList);
+    hiddenColumnsPanel.appendChild(restoreBtn);
+    contentDiv.appendChild(hiddenColumnsPanel);
+
+    let hiddenCols = new Set();
+
+    function updateHiddenPanel() {
+      hiddenColList.innerHTML = '';
+
+      if (hiddenCols.size === 0) {
+        hiddenColumnsPanel.style.display = 'none';
+        return;
+      }
+
+      hiddenCols.forEach((idx) => {
+        const colName = colKeys[idx];
+        const colSpan = document.createElement('span');
+        colSpan.textContent = colName;
+        colSpan.onclick = () => {
+          const cells = document.querySelectorAll(`.col-${idx}`);
+          cells.forEach((cell) => (cell.style.display = ''));
+          hiddenCols.delete(idx);
+          updateHiddenPanel();
+        };
+        hiddenColList.appendChild(colSpan);
+      });
+
+      hiddenColumnsPanel.style.display = 'block';
+    }
+
+    restoreBtn.onclick = () => {
+      hiddenCols.forEach((idx) => {
+        const cells = document.querySelectorAll(`.col-${idx}`);
+        cells.forEach((cell) => (cell.style.display = ''));
+      });
+      hiddenCols.clear();
+      updateHiddenPanel();
+    };
+
+    // === TABLE RENDERING ===
+    const tableContainer = document.createElement('div');
+    tableContainer.id = 'table-container';
+
+    const table = document.createElement('table');
+    table.classList.add('sheet-table');
+
+    const header = document.createElement('tr');
+    const colKeys = Object.keys(sheetData[0]);
+
+    colKeys.forEach((col, idx) => {
+      const th = document.createElement('th');
+      th.classList.add(`col-${idx}`);
+
+      const title = document.createElement('span');
+      title.textContent = col;
+
+      const icon = document.createElement('span');
+      icon.innerHTML = '👁️';
+      icon.classList.add('hide-icon');
+      icon.title = 'Hide column';
+
+      icon.onclick = () => {
+        const cells = document.querySelectorAll(`.col-${idx}`);
+        cells.forEach((cell) => (cell.style.display = 'none'));
+        hiddenCols.add(idx);
+        updateHiddenPanel();
+      };
+
+      th.appendChild(title);
+      th.appendChild(icon);
+      header.appendChild(th);
+    });
+
+    table.appendChild(header);
+
+    sheetData.forEach((row) => {
+      const tr = document.createElement('tr');
+      Object.values(row).forEach((cell, idx) => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        td.classList.add(`col-${idx}`);
+
+        td.style.maxWidth = '300px';
+        td.style.overflowWrap = 'break-word';
+        td.style.wordBreak = 'break-word';
+        td.style.whiteSpace = 'normal';
+
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+
+    tableContainer.appendChild(table);
+    contentDiv.appendChild(tableContainer);
+  } catch (err) {
+    console.error('Error rendering sheet:', err);
+    alert('Failed to render sheet.');
+  } finally {
+    loader.style.display = 'none';
+  }
 }
