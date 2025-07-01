@@ -2,7 +2,6 @@ function loadSheet(type, sheetName) {
   const loader = document.getElementById('loader');
   loader.style.display = 'flex';
 
-  // Close sidebar
   document.getElementById('sidebar').style.display = 'none';
   document.getElementById('toggleSidebar').innerHTML = '&#x25B6;';
 
@@ -44,7 +43,6 @@ function loadSheet(type, sheetName) {
     sheetTitle.style.margin = '0';
     sheetTitle.style.fontSize = '16px';
 
-    // === View Toggle + Unhide Button ===
     const viewToggle = document.createElement('div');
     viewToggle.id = 'viewOptions';
     viewToggle.style.textAlign = 'right';
@@ -68,14 +66,8 @@ function loadSheet(type, sheetName) {
       });
     });
 
-    const unhideBtn = document.createElement('button');
-    unhideBtn.textContent = 'Unhide All';
-    unhideBtn.className = 'hide-toggle-btn';
-    unhideBtn.style.marginLeft = '20px';
-
     const rightBar = document.createElement('div');
     rightBar.appendChild(viewToggle);
-    rightBar.appendChild(unhideBtn);
 
     sheetTitleBar.appendChild(sheetTitle);
     sheetTitleBar.appendChild(rightBar);
@@ -89,8 +81,52 @@ function loadSheet(type, sheetName) {
     table.classList.add('sheet-table');
 
     const header = document.createElement('tr');
+    const filterRow = document.createElement('tr');
+
     const colKeys = Object.keys(sheetData[0]);
     const hiddenCols = new Set();
+    let currentSort = { colIndex: -1, asc: true };
+
+    // === Sort Function
+    function sortData(colIndex, asc) {
+      const key = colKeys[colIndex];
+      sheetData.sort((a, b) => {
+        const valA = a[key] ?? '';
+        const valB = b[key] ?? '';
+        return asc
+          ? valA.toString().localeCompare(valB.toString())
+          : valB.toString().localeCompare(valA.toString());
+      });
+      renderBody();
+    }
+
+    // === Filter Function
+    const filters = new Array(colKeys.length).fill('');
+
+    function renderBody() {
+      // Clear previous body rows
+      table.querySelectorAll('tr.data-row').forEach((tr) => tr.remove());
+
+      const filteredData = sheetData.filter((row) =>
+        colKeys.every((key, i) =>
+          filters[i] ? (row[key] ?? '').toString().toLowerCase().includes(filters[i].toLowerCase()) : true
+        )
+      );
+
+      filteredData.forEach((row) => {
+        const tr = document.createElement('tr');
+        tr.className = 'data-row';
+        colKeys.forEach((key) => {
+          const td = document.createElement('td');
+          td.textContent = row[key];
+          td.style.maxWidth = '300px';
+          td.style.overflowWrap = 'break-word';
+          td.style.whiteSpace = 'normal';
+          tr.appendChild(td);
+        });
+        table.appendChild(tr);
+      });
+    }
 
     colKeys.forEach((col, idx) => {
       const th = document.createElement('th');
@@ -98,39 +134,33 @@ function loadSheet(type, sheetName) {
       th.style.userSelect = 'none';
       th.style.whiteSpace = 'nowrap';
       th.style.paddingRight = '28px';
+      th.style.cursor = 'pointer';
 
       const labelSpan = document.createElement('span');
       labelSpan.textContent = col;
 
-      const hideIcon = document.createElement('span');
-      hideIcon.innerHTML = '&#x1f441;&#x200d;&#x1f5e8;';
-      hideIcon.title = 'Hide Column';
-      hideIcon.style.cursor = 'pointer';
-      hideIcon.style.position = 'absolute';
-      hideIcon.style.top = '50%';
-      hideIcon.style.right = '4px';
-      hideIcon.style.transform = 'translateY(-50%)';
-      hideIcon.style.fontSize = '14px';
-      hideIcon.style.opacity = '0.7';
-      hideIcon.style.paddingLeft = '6px';
+      const sortIcon = document.createElement('span');
+      sortIcon.innerHTML = '';
+      sortIcon.style.marginLeft = '5px';
+      sortIcon.style.fontSize = '12px';
+      sortIcon.style.opacity = '0.6';
 
-      hideIcon.onclick = () => {
-        hiddenCols.add(idx);
-        document
-          .querySelectorAll(`.sheet-table th:nth-child(${idx + 1}), .sheet-table td:nth-child(${idx + 1})`)
-          .forEach((el) => (el.style.display = 'none'));
+      th.onclick = () => {
+        if (currentSort.colIndex === idx) {
+          currentSort.asc = !currentSort.asc;
+        } else {
+          currentSort = { colIndex: idx, asc: true };
+        }
+        sortIcon.innerHTML = currentSort.asc ? '🔼' : '🔽';
+        table.querySelectorAll('th span.sort-icon').forEach((s) => (s.innerHTML = ''));
+        sortIcon.className = 'sort-icon';
+        sortData(idx, currentSort.asc);
       };
 
       th.appendChild(labelSpan);
-      th.appendChild(hideIcon);
+      th.appendChild(sortIcon);
 
-      // Adjust header width to prevent overlap
-      const estimatedWidth = Math.max(100, col.length * 8 + 40);
-      th.style.minWidth = estimatedWidth + 'px';
-      th.style.maxWidth = '300px';
-      th.style.overflow = 'hidden';
-
-      // === Resizer ===
+      // === Resizer
       const resizer = document.createElement('div');
       resizer.className = 'col-resizer';
       th.appendChild(resizer);
@@ -139,11 +169,12 @@ function loadSheet(type, sheetName) {
         e.preventDefault();
         const startX = e.pageX;
         const startWidth = th.offsetWidth;
+        const idx1 = idx + 1;
 
         const onMouseMove = (moveEvent) => {
           const newWidth = startWidth + (moveEvent.pageX - startX);
           th.style.width = newWidth + 'px';
-          document.querySelectorAll(`.sheet-table td:nth-child(${idx + 1})`)
+          document.querySelectorAll(`.sheet-table td:nth-child(${idx1})`)
             .forEach((td) => (td.style.width = newWidth + 'px'));
         };
 
@@ -157,36 +188,31 @@ function loadSheet(type, sheetName) {
       });
 
       header.appendChild(th);
+
+      // === Filter Input
+      const filterTd = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = 'Search...';
+      input.style.width = '95%';
+      input.style.fontSize = '12px';
+      input.style.padding = '3px';
+
+      input.addEventListener('input', (e) => {
+        filters[idx] = e.target.value;
+        renderBody();
+      });
+
+      filterTd.appendChild(input);
+      filterRow.appendChild(filterTd);
     });
 
     table.appendChild(header);
-
-    sheetData.forEach((row) => {
-      const tr = document.createElement('tr');
-      Object.values(row).forEach((cell) => {
-        const td = document.createElement('td');
-        td.textContent = cell;
-        td.style.maxWidth = '300px';
-        td.style.overflowWrap = 'break-word';
-        td.style.wordBreak = 'break-word';
-        td.style.whiteSpace = 'normal';
-        tr.appendChild(td);
-      });
-      table.appendChild(tr);
-    });
+    table.appendChild(filterRow);
+    renderBody();
 
     tableContainer.appendChild(table);
     contentDiv.appendChild(tableContainer);
-
-    // === Unhide Button Action ===
-    unhideBtn.onclick = () => {
-      hiddenCols.forEach((idx) => {
-        document
-          .querySelectorAll(`.sheet-table th:nth-child(${idx + 1}), .sheet-table td:nth-child(${idx + 1})`)
-          .forEach((el) => (el.style.display = ''));
-      });
-      hiddenCols.clear();
-    };
   } catch (err) {
     console.error('Error rendering sheet:', err);
     alert('Failed to render sheet.');
