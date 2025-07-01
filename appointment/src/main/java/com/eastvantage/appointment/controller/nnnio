@@ -1,26 +1,19 @@
-th {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding-right: 8px;
-  white-space: nowrap;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: #eee;
+#columnTogglePanel {
+  display: none;
+  position: absolute;
+  top: 45px;
+  right: 20px;
+  z-index: 10;
+  background: #f9f9f9;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 13px;
 }
 
-/* Eye icon style */
-.hide-icon {
-  opacity: 0;
-  transition: opacity 0.2s;
+#columnTogglePanel label {
+  display: block;
+  margin-bottom: 6px;
   cursor: pointer;
-  font-size: 14px;
-  flex-shrink: 0;
-}
-
-/* Show icon only on hover */
-th:hover .hide-icon {
-  opacity: 1;
 }
