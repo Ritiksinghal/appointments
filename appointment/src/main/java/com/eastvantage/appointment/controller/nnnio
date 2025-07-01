@@ -1,22 +1,166 @@
-const columnToggleDiv = document.createElement('div');
-columnToggleDiv.style.textAlign = 'right';
-columnToggleDiv.style.marginBottom = '10px';
+function loadSheet(type, sheetName) {
+  const loader = document.getElementById('loader');
+  loader.style.display = 'flex';
 
-const toggleBtn = document.createElement('button');
-toggleBtn.textContent = 'Hide/Show Columns';
-toggleBtn.style.padding = '4px 10px';
-toggleBtn.style.cursor = 'pointer';
+  // Auto-close sidebar
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('toggleSidebar').innerHTML = '&#x25B6;'; // ▶
 
-const checkboxContainer = document.createElement('div');
-checkboxContainer.style.display = 'none';
-checkboxContainer.style.textAlign = 'left';
-checkboxContainer.style.marginTop = '8px';
+  try {
+    const sheetData = excelData[type][sheetName];
+    const contentDiv = document.getElementById('content');
+    contentDiv.innerHTML = ''; // clear previous content
 
-// Show/hide checkboxes
-toggleBtn.onclick = () => {
-  checkboxContainer.style.display = checkboxContainer.style.display === 'none' ? 'block' : 'none';
-};
+    // Capitalize helper
+    const capitalizeFirst = (str) =>
+      str.charAt(0).toUpperCase() + str.slice(1).toLowerCase().replace(/_/g, ' ');
 
-columnToggleDiv.appendChild(toggleBtn);
-contentDiv.appendChild(columnToggleDiv);
-contentDiv.appendChild(checkboxContainer);
+    // === SHEET TITLE ===
+    const fileLabel =
+      type === 'recognition'
+        ? 'Recognition Settings'
+        : type === 'screening'
+        ? 'Screening Settings'
+        : type;
+
+    const sheetTitleBar = document.createElement('div');
+    sheetTitleBar.id = 'sheetTitleBar';
+    sheetTitleBar.style.position = 'sticky';
+    sheetTitleBar.style.top = '0';
+    sheetTitleBar.style.backgroundColor = 'white';
+    sheetTitleBar.style.zIndex = '3';
+    sheetTitleBar.style.padding = '10px 0';
+    sheetTitleBar.style.borderBottom = '1px solid #ccc';
+
+    const sheetTitle = document.createElement('h2');
+    sheetTitle.textContent = `${fileLabel} / ${capitalizeFirst(sheetName)}`;
+    sheetTitle.style.margin = '0';
+    sheetTitle.style.fontSize = '16px';
+    sheetTitle.style.textAlign = 'left';
+
+    sheetTitleBar.appendChild(sheetTitle);
+    contentDiv.appendChild(sheetTitleBar);
+
+    if (!sheetData || !sheetData.length) {
+      loader.style.display = 'none';
+      contentDiv.innerHTML += '<p>No data available in this sheet.</p>';
+      return;
+    }
+
+    // === VIEW MODE TOGGLE ===
+    const viewToggle = document.createElement('div');
+    viewToggle.id = 'viewOptions';
+    viewToggle.style.textAlign = 'right';
+    viewToggle.style.margin = '10px 0';
+
+    viewToggle.innerHTML = `
+      <label>
+        <input type="radio" name="viewMode" value="comfortable" checked> Comfortable
+      </label>
+      <label style="margin-left: 10px;">
+        <input type="radio" name="viewMode" value="compact"> Compact
+      </label>
+    `;
+
+    contentDiv.appendChild(viewToggle);
+    viewToggle.querySelectorAll('input[name="viewMode"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'compact') {
+          contentDiv.classList.add('compact-mode');
+        } else {
+          contentDiv.classList.remove('compact-mode');
+        }
+      });
+    });
+
+    // === COLUMN TOGGLE PANEL ===
+    const columnToggleDiv = document.createElement('div');
+    columnToggleDiv.style.textAlign = 'right';
+    columnToggleDiv.style.marginBottom = '10px';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.textContent = 'Hide/Show Columns';
+    toggleBtn.style.padding = '4px 10px';
+    toggleBtn.style.cursor = 'pointer';
+
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.style.display = 'none';
+    checkboxContainer.style.textAlign = 'left';
+    checkboxContainer.style.marginTop = '8px';
+
+    toggleBtn.onclick = () => {
+      checkboxContainer.style.display =
+        checkboxContainer.style.display === 'none' ? 'block' : 'none';
+    };
+
+    columnToggleDiv.appendChild(toggleBtn);
+    contentDiv.appendChild(columnToggleDiv);
+    contentDiv.appendChild(checkboxContainer);
+
+    // === TABLE RENDERING ===
+    const tableContainer = document.createElement('div');
+    tableContainer.id = 'table-container';
+
+    const table = document.createElement('table');
+    table.classList.add('sheet-table');
+
+    const header = document.createElement('tr');
+    const colKeys = Object.keys(sheetData[0]);
+
+    colKeys.forEach((col, idx) => {
+      const th = document.createElement('th');
+      th.textContent = col;
+      th.classList.add(`col-${idx}`);
+      header.appendChild(th);
+
+      // Create checkbox
+      const label = document.createElement('label');
+      label.style.marginRight = '12px';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = true;
+      checkbox.dataset.col = idx;
+
+      checkbox.addEventListener('change', (e) => {
+        const colIdx = e.target.dataset.col;
+        const cells = document.querySelectorAll(`.col-${colIdx}`);
+        cells.forEach((cell) => {
+          cell.style.display = e.target.checked ? '' : 'none';
+        });
+      });
+
+      label.appendChild(checkbox);
+      label.appendChild(document.createTextNode(` ${capitalizeFirst(col)}`));
+      checkboxContainer.appendChild(label);
+    });
+
+    table.appendChild(header);
+
+    sheetData.forEach((row) => {
+      const tr = document.createElement('tr');
+      Object.values(row).forEach((cell, idx) => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        td.classList.add(`col-${idx}`);
+
+        // Optional truncate for long text
+        td.style.maxWidth = '300px';
+        td.style.overflowWrap = 'break-word';
+        td.style.wordBreak = 'break-word';
+        td.style.whiteSpace = 'normal';
+
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+
+    tableContainer.appendChild(table);
+    contentDiv.appendChild(tableContainer);
+  } catch (err) {
+    console.error('Error rendering sheet:', err);
+    alert('Failed to render sheet.');
+  } finally {
+    loader.style.display = 'none';
+  }
+}
