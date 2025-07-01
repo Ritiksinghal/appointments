@@ -1,247 +1,96 @@
-let data = {}, currentSheet = '', currentFileType = '', filters = {};
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Excel Config Editor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .filter-box {
+      @apply absolute z-10 bg-white border border-gray-300 shadow p-2 space-y-2;
+    }
+    input[type="text"], input[type="checkbox"] {
+      @apply border border-gray-300 rounded px-2 py-1 w-full;
+    }
+    table input {
+      @apply w-full bg-transparent outline-none;
+    }
+    thead th {
+      @apply bg-gray-100 sticky top-0 z-10 text-sm text-left px-2 py-1;
+    }
+    tbody td {
+      @apply px-2 py-1;
+    }
+    .enabled {
+      @apply bg-blue-600 text-white cursor-pointer;
+    }
+    .filter-icon {
+      @apply ml-2 cursor-pointer text-gray-500 hover:text-blue-500;
+    }
+    .clear-filters {
+      @apply text-sm text-red-500 cursor-pointer float-right;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <!-- Top Navbar -->
+  <div class="flex items-center justify-between bg-blue-600 text-white px-4 py-2 shadow sticky top-0 z-50">
+    <div class="flex items-center gap-2">
+      <button id="toggleDrawer" class="text-2xl font-bold">☰</button>
+      <span id="sheetTitle" class="text-lg font-semibold">Excel Config Editor</span>
+    </div>
+    <div id="toolbar" class="space-x-2 hidden sm:flex">
+      <button onclick="addRow()" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded">＋ Add</button>
+      <button id="btnRemove" onclick="removeSelected()" class="px-3 py-1 rounded bg-gray-300 text-gray-600">– Remove</button>
+      <button id="btnSave" onclick="save()" class="px-3 py-1 rounded bg-gray-300 text-gray-600">💾 Save</button>
+    </div>
+  </div>
 
-const sheetButtons = document.getElementById('sheetButtons'),
-      sheetTitle = document.getElementById('sheetTitle'),
-      dataTable = document.getElementById('dataTable'),
-      headerRow = document.getElementById('headerRow'),
-      tableBody = document.getElementById('tableBody'),
-      emptyState = document.getElementById('emptyState'),
-      toolbar = document.getElementById('toolbar'),
-      btnRemove = document.getElementById('btnRemove'),
-      btnSave = document.getElementById('btnSave');
+  <!-- Layout: Drawer + Content -->
+  <div class="flex h-[calc(100vh-56px)]">
+    <!-- Left Drawer -->
+    <div id="drawer" class="w-64 bg-white border-r border-gray-200 p-4 overflow-y-auto transition-transform transform -translate-x-full fixed sm:relative sm:translate-x-0 z-40 sm:z-auto h-full sm:h-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="font-semibold text-gray-700">Files</h2>
+        <button id="collapseDrawer" class="text-xl text-gray-500 hover:text-black sm:hidden">⯈</button>
+      </div>
+      <div id="sheetButtons" class="flex flex-col gap-2"></div>
+    </div>
 
-window.onload = () => {
-  const files = ['Recognition Settings', 'Screening Settings'];
-  files.forEach(file => {
-    const btn = document.createElement('button');
-    btn.innerText = file;
-    btn.classList.add('file-button');
-    btn.onclick = () => loadFile(file.toLowerCase().includes('recognition') ? 'recognition' : 'screening', btn);
-    sheetButtons.appendChild(btn);
-  });
-};
+    <!-- Main Content -->
+    <div class="flex-1 overflow-auto p-4">
+      <div id="emptyState" class="text-center text-gray-500 mt-20">Select a sheet to view data.</div>
 
-async function loadFile(type, clickedBtn) {
-  currentSheet = '';
-  currentFileType = type;
-  data = {};
-  filters = {};
-  sheetTitle.innerText = '';
-  tableBody.innerHTML = '';
-  headerRow.innerHTML = '';
-  toolbar.classList.remove('visible');
-  emptyState.style.display = 'block';
-  dataTable.style.display = 'none';
+      <div class="overflow-auto border rounded shadow bg-white hidden" id="dataTable">
+        <table class="min-w-full table-fixed border-collapse">
+          <thead>
+            <tr id="headerRow"></tr>
+          </thead>
+          <tbody id="tableBody" class="text-sm"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-  const res = await fetch(`/${type}`);
-  const result = await res.json();
-  data = result;
+  <script src="app.js"></script>
+  <script>
+    // Drawer toggle behavior
+    const drawer = document.getElementById("drawer");
+    const toggleDrawerBtn = document.getElementById("toggleDrawer");
+    const collapseDrawerBtn = document.getElementById("collapseDrawer");
 
-  // Remove old sheet buttons
-  Array.from(sheetButtons.children).forEach(child => {
-    if (child.dataset && child.dataset.sheet) child.remove();
-  });
+    toggleDrawerBtn.onclick = () => {
+      drawer.classList.toggle("-translate-x-full");
+    };
 
-  // Highlight selected file
-  Array.from(sheetButtons.children).forEach(b => b.classList.remove('active'));
-  clickedBtn.classList.add('active');
+    collapseDrawerBtn.onclick = () => {
+      drawer.classList.add("-translate-x-full");
+    };
 
-  // Add buttons for each sheet
-  Object.keys(data).forEach(sheet => {
-    const btn = document.createElement('button');
-    btn.innerText = '📄 ' + sheet;
-    btn.dataset.sheet = 'true';
-    btn.classList.add('sheet-button');
-    btn.onclick = () => selectSheet(sheet, btn);
-    sheetButtons.appendChild(btn);
-  });
-}
-
-function selectSheet(sheet, clickedBtn) {
-  currentSheet = sheet;
-  filters = {};
-  sheetTitle.innerText = sheet;
-  dataTable.style.display = 'table';
-  emptyState.style.display = 'none';
-  toolbar.classList.add('visible');
-  btnRemove.classList.remove('enabled');
-  btnSave.classList.remove('enabled');
-
-  // Highlight selected sheet
-  Array.from(sheetButtons.children).forEach(b => b.classList.remove('active'));
-  clickedBtn.classList.add('active');
-
-  renderTable();
-}
-
-function renderTable() {
-  headerRow.innerHTML = '';
-  tableBody.innerHTML = '';
-
-  const rows = data[currentSheet] || [];
-  if (!rows.length) return;
-
-  const headers = Object.keys(rows[0]);
-
-  // Checkbox column
-  headerRow.appendChild(document.createElement('th'));
-
-  // Header + filter icons
-  headers.forEach(header => {
-    const th = document.createElement('th');
-    th.innerText = header;
-
-    const icon = document.createElement('span');
-    icon.className = 'filter-icon';
-    icon.innerText = '≡';
-    icon.onclick = e => showFilterBox(e, header, th);
-
-    th.appendChild(icon);
-    headerRow.appendChild(th);
-  });
-
-  const filteredRows = rows
-    .map((row, idx) => ({ row, idx }))
-    .filter(({ row }) => Object.keys(row).every(key => {
-      if (!(key in filters)) return true;
-      const cell = (row[key] ?? '').toString();
-      const search = filters[key];
-      const isRegex = filters[key + '_regex'];
-      const isCase = filters[key + '_case'];
-
-      if (search === '') return true;
-
-      if (isRegex) {
-        try {
-          const pattern = new RegExp(search, isCase ? '' : 'i');
-          return pattern.test(cell);
-        } catch {
-          return false;
-        }
-      } else {
-        return isCase
-          ? cell.includes(search)
-          : cell.toLowerCase().includes(search.toLowerCase());
-      }
-    }));
-
-  filteredRows.forEach(({ row, idx }) => {
-    const tr = document.createElement('tr');
-
-    const cbTd = document.createElement('td');
-    cbTd.className = 'checkbox-col';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.dataset.index = idx;
-    cb.onclick = () => toggleActions();
-    cbTd.appendChild(cb);
-    tr.appendChild(cbTd);
-
-    headers.forEach(header => {
-      const td = document.createElement('td');
-      const input = document.createElement('input');
-      input.value = row[header] ?? '';
-      input.oninput = e => data[currentSheet][idx][header] = e.target.value;
-      td.appendChild(input);
-      tr.appendChild(td);
-    });
-
-    tableBody.appendChild(tr);
-  });
-}
-
-function showFilterBox(e, header, th) {
-  document.querySelectorAll('.filter-box').forEach(b => b.remove());
-
-  const box = document.createElement('div');
-  box.className = 'filter-box';
-
-  const input = document.createElement('input');
-  input.value = filters[header] || '';
-  input.placeholder = 'Filter...';
-  input.oninput = () => {
-    filters[header] = input.value;
-    renderTable();
-  };
-
-  const caseCheckbox = document.createElement('input');
-  caseCheckbox.type = 'checkbox';
-  caseCheckbox.checked = filters[header + '_case'] || false;
-  caseCheckbox.onchange = () => {
-    filters[header + '_case'] = caseCheckbox.checked;
-    renderTable();
-  };
-
-  const regexCheckbox = document.createElement('input');
-  regexCheckbox.type = 'checkbox';
-  regexCheckbox.checked = filters[header + '_regex'] || false;
-  regexCheckbox.onchange = () => {
-    filters[header + '_regex'] = regexCheckbox.checked;
-    renderTable();
-  };
-
-  const caseLabel = document.createElement('label');
-  caseLabel.innerText = 'Case';
-  caseLabel.appendChild(caseCheckbox);
-
-  const regexLabel = document.createElement('label');
-  regexLabel.innerText = 'Regex';
-  regexLabel.appendChild(regexCheckbox);
-
-  const clearBtn = document.createElement('span');
-  clearBtn.className = 'clear-filters';
-  clearBtn.innerText = 'Clear';
-  clearBtn.onclick = () => {
-    delete filters[header];
-    delete filters[header + '_regex'];
-    delete filters[header + '_case'];
-    renderTable();
-    box.remove();
-  };
-
-  box.appendChild(input);
-  box.appendChild(caseLabel);
-  box.appendChild(regexLabel);
-  box.appendChild(clearBtn);
-  th.appendChild(box);
-
-  input.focus();
-  e.stopPropagation();
-  document.addEventListener('click', () => box.remove(), { once: true });
-}
-
-function addRow() {
-  const headers = Object.keys(data[currentSheet][0] || {});
-  const blank = {};
-  headers.forEach(h => blank[h] = '');
-  data[currentSheet].push(blank);
-  renderTable();
-}
-
-function removeSelected() {
-  const checkboxes = tableBody.querySelectorAll('input[type="checkbox"]:checked');
-  const indexes = new Set([...checkboxes].map(cb => parseInt(cb.dataset.index)));
-  data[currentSheet] = data[currentSheet].filter((_, i) => !indexes.has(i));
-  renderTable();
-  toggleActions();
-}
-
-function save() {
-  if (!btnSave.classList.contains('enabled')) return;
-  if (!currentFileType || !currentSheet) return alert("Nothing selected to save");
-
-  fetch(`/${currentFileType}/update`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ [currentSheet]: data[currentSheet] })
-  }).then(res => {
-    if (res.ok) alert('Saved!');
-    else alert('Save failed!');
-  });
-}
-
-function toggleActions() {
-  const checked = tableBody.querySelector('input[type="checkbox"]:checked');
-  btnRemove.classList.toggle('enabled', !!checked);
-  btnSave.classList.toggle('enabled', !!checked);
-}
+    // Auto-close drawer on sheet select (hooked from JS later)
+    function closeDrawer() {
+      if (window.innerWidth < 640) drawer.classList.add("-translate-x-full");
+    }
+  </script>
+</body>
+</html>
