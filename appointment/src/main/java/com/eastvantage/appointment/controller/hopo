@@ -1,29 +1,5 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
-from typing import Dict, List, Any
-from app.services.data_service import get_data, save_data
+from fastapi import FastAPI
+from app.routes.api import router
 
-router = APIRouter()
-
-
-@router.get("/{file_type}")
-def fetch_file(file_type: str):
-    try:
-        data = get_data(file_type)
-        return {
-            sheet: [row.dict() for row in rows]
-            for sheet, rows in data.items()
-        }
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid file type")
-
-
-@router.post("/{file_type}/{sheet_name}")
-def update_sheet(file_type: str, sheet_name: str, payload: List[Dict[str, Any]]):
-    try:
-        save_data(file_type, sheet_name, payload)
-        return {"message": f"Sheet '{sheet_name}' updated in {file_type} file."}
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid file type")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+app = FastAPI(title="Excel Sheet JSON API")
+app.include_router(router)
