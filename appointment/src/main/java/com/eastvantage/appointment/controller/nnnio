@@ -2,10 +2,11 @@
   background-color: #f0f0f0;
   border: 1px solid #ccc;
   border-radius: 4px;
-  font-size: 13px;
-  padding: 4px 10px;
+  font-size: 14px;
+  padding: 4px 8px;
   cursor: pointer;
   transition: background 0.2s;
+  line-height: 1;
 }
 
 .hide-toggle-btn:hover {
