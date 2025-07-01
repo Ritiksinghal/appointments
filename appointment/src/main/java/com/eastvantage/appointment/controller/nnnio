@@ -1,15 +1,25 @@
-#columnTogglePanel {
-  display: none;
-  position: absolute;
-  top: 45px;
-  right: 20px;
-  z-index: 10;
-  background: #f9f9f9;
-  border: 1px solid #ccc;
-  padding: 10px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  font-size: 13px;
+.sheet-table th {
+  background-color: #eee;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.sheet-table td {
+  word-break: break-word;
+  white-space: normal;
+}
+
+#table-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 140px);
+}
+
+.compact-mode table td {
+  padding: 4px 6px;
+  font-size: 12px;
 }
 
 #columnTogglePanel label {
