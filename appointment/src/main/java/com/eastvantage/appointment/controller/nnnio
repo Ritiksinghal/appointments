@@ -1,29 +1,170 @@
-.sheet-table th {
-  background-color: #eee;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  white-space: nowrap;
-}
+function loadSheet(type, sheetName) {
+  const loader = document.getElementById('loader');
+  loader.style.display = 'flex';
 
-.sheet-table td {
-  word-break: break-word;
-  white-space: normal;
-}
+  // Auto-close sidebar
+  document.getElementById('sidebar').style.display = 'none';
+  document.getElementById('toggleSidebar').innerHTML = '&#x25B6;'; // ▶
 
-#table-container {
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(100vh - 140px);
-}
+  try {
+    const sheetData = excelData[type][sheetName];
+    const contentDiv = document.getElementById('content');
+    contentDiv.innerHTML = ''; // clear previous content
 
-.compact-mode table td {
-  padding: 4px 6px;
-  font-size: 12px;
-}
+    const capitalizeFirst = (str) =>
+      str.charAt(0).toUpperCase() + str.slice(1).toLowerCase().replace(/_/g, ' ');
 
-#columnTogglePanel label {
-  display: block;
-  margin-bottom: 6px;
-  cursor: pointer;
+    if (!sheetData || !sheetData.length) {
+      loader.style.display = 'none';
+      contentDiv.innerHTML += '<p>No data available in this sheet.</p>';
+      return;
+    }
+
+    // === SHEET TITLE BAR ===
+    const sheetTitleBar = document.createElement('div');
+    sheetTitleBar.style.display = 'flex';
+    sheetTitleBar.style.justifyContent = 'space-between';
+    sheetTitleBar.style.alignItems = 'center';
+    sheetTitleBar.style.position = 'sticky';
+    sheetTitleBar.style.top = '0';
+    sheetTitleBar.style.backgroundColor = 'white';
+    sheetTitleBar.style.zIndex = '3';
+    sheetTitleBar.style.padding = '10px 0';
+    sheetTitleBar.style.borderBottom = '1px solid #ccc';
+
+    const fileLabel =
+      type === 'recognition'
+        ? 'Recognition Settings'
+        : type === 'screening'
+        ? 'Screening Settings'
+        : type;
+
+    const sheetTitle = document.createElement('h2');
+    sheetTitle.textContent = `${fileLabel} / ${capitalizeFirst(sheetName)}`;
+    sheetTitle.style.margin = '0';
+    sheetTitle.style.fontSize = '16px';
+
+    const hideBtn = document.createElement('button');
+    hideBtn.textContent = 'Hide';
+    hideBtn.style.padding = '4px 10px';
+    hideBtn.style.cursor = 'pointer';
+    hideBtn.style.marginRight = '10px';
+
+    const colPanel = document.createElement('div');
+    colPanel.id = 'columnTogglePanel';
+    colPanel.style.display = 'none';
+
+    hideBtn.onclick = () => {
+      colPanel.style.display = colPanel.style.display === 'none' ? 'block' : 'none';
+    };
+
+    sheetTitleBar.appendChild(sheetTitle);
+    sheetTitleBar.appendChild(hideBtn);
+    contentDiv.appendChild(sheetTitleBar);
+    contentDiv.appendChild(colPanel);
+
+    // === VIEW MODE TOGGLE ===
+    const viewToggle = document.createElement('div');
+    viewToggle.id = 'viewOptions';
+    viewToggle.style.textAlign = 'right';
+    viewToggle.style.margin = '10px 0';
+
+    viewToggle.innerHTML = `
+      <label>
+        <input type="radio" name="viewMode" value="comfortable" checked> Comfortable
+      </label>
+      <label style="margin-left: 10px;">
+        <input type="radio" name="viewMode" value="compact"> Compact
+      </label>
+    `;
+
+    contentDiv.appendChild(viewToggle);
+    viewToggle.querySelectorAll('input[name="viewMode"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        if (e.target.value === 'compact') {
+          contentDiv.classList.add('compact-mode');
+        } else {
+          contentDiv.classList.remove('compact-mode');
+        }
+      });
+    });
+
+    // === TABLE RENDERING ===
+    const tableContainer = document.createElement('div');
+    tableContainer.id = 'table-container';
+
+    const table = document.createElement('table');
+    table.classList.add('sheet-table');
+
+    const header = document.createElement('tr');
+    const colKeys = Object.keys(sheetData[0]);
+
+    // Build column toggle panel checkboxes
+    colPanel.innerHTML = '';
+    colPanel.style.position = 'absolute';
+    colPanel.style.top = '45px';
+    colPanel.style.right = '20px';
+    colPanel.style.zIndex = '10';
+    colPanel.style.background = '#f9f9f9';
+    colPanel.style.border = '1px solid #ccc';
+    colPanel.style.padding = '10px';
+    colPanel.style.borderRadius = '6px';
+    colPanel.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+    colPanel.style.fontSize = '13px';
+
+    colKeys.forEach((col, idx) => {
+      const th = document.createElement('th');
+      th.textContent = col;
+      th.classList.add(`col-${idx}`);
+      header.appendChild(th);
+
+      const label = document.createElement('label');
+      label.style.display = 'block';
+      label.style.marginBottom = '6px';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = true;
+      checkbox.dataset.col = idx;
+
+      checkbox.addEventListener('change', (e) => {
+        const colIdx = e.target.dataset.col;
+        const cells = document.querySelectorAll(`.col-${colIdx}`);
+        cells.forEach((cell) => {
+          cell.style.display = e.target.checked ? '' : 'none';
+        });
+      });
+
+      label.appendChild(checkbox);
+      label.append(` ${capitalizeFirst(col)}`);
+      colPanel.appendChild(label);
+    });
+
+    table.appendChild(header);
+
+    sheetData.forEach((row) => {
+      const tr = document.createElement('tr');
+      Object.values(row).forEach((cell, idx) => {
+        const td = document.createElement('td');
+        td.textContent = cell;
+        td.classList.add(`col-${idx}`);
+
+        td.style.maxWidth = '300px';
+        td.style.overflowWrap = 'break-word';
+        td.style.wordBreak = 'break-word';
+        td.style.whiteSpace = 'normal';
+
+        tr.appendChild(td);
+      });
+      table.appendChild(tr);
+    });
+
+    tableContainer.appendChild(table);
+    contentDiv.appendChild(tableContainer);
+  } catch (err) {
+    console.error('Error rendering sheet:', err);
+    alert('Failed to render sheet.');
+  } finally {
+    loader.style.display = 'none';
+  }
 }
