@@ -2,177 +2,113 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Excel Config Editor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trade AI</title>
   <style>
-    body {
+    body, html {
       margin: 0;
-      font-family: sans-serif;
-      background: #f4f4f4;
-      color: #333;
-    }
-
-    #app {
-      display: flex;
+      padding: 0;
+      font-family: Arial, sans-serif;
       height: 100vh;
       overflow: hidden;
     }
 
-    #sidebar {
-      background: #ffffff;
-      border-right: 1px solid #ddd;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      white-space: nowrap;
-      min-width: max-content;
-      max-width: 300px;
-      overflow-x: hidden;
-    }
-
-    #sheetButtons button {
-      background: #eee;
-      border: none;
-      padding: 6px 12px;
-      cursor: pointer;
-      border-radius: 3px;
-      text-align: left;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    #sheetButtons button.active {
-      background: #007bff;
+    #topbar {
+      height: 60px;
+      background-color: #222;
       color: white;
-    }
-
-    #main {
-      flex: 1;
-      padding: 16px;
-      overflow: auto;
-    }
-
-    #topBar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      justify-content: center;
+      position: relative;
     }
 
-    #toolbar button {
-      margin-left: 10px;
-      padding: 6px 12px;
-      border: none;
-      background: #ccc;
-      color: #333;
-      border-radius: 4px;
+    #toggleSidebar {
+      position: absolute;
+      left: 15px;
+      top: 15px;
       cursor: pointer;
-    }
-
-    #toolbar button.enabled {
-      background: #28a745;
+      background-color: #444;
       color: white;
-    }
-
-    #toolbar button.disabled {
-      background: #eee;
-      color: #aaa;
-      pointer-events: none;
-    }
-
-    #emptyState {
-      text-align: center;
+      border: none;
+      padding: 6px 10px;
       font-size: 18px;
-      margin-top: 60px;
+      border-radius: 4px;
     }
 
-    #dataTable {
-      max-height: calc(100vh - 120px);
+    #container {
+      display: flex;
+      height: calc(100vh - 60px);
+    }
+
+    #sidebar {
+      width: 250px;
+      background-color: #f0f0f0;
+      padding: 10px;
+      display: none;
+      flex-shrink: 0;
+      border-right: 1px solid #ccc;
+      overflow-y: auto;
+    }
+
+    #content {
+      flex-grow: 1;
+      padding: 20px;
       overflow: auto;
-      background: white;
-      border: 1px solid #ddd;
+    }
+
+    .main-btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      font-weight: bold;
+      background-color: #ddd;
+      border: none;
+      cursor: pointer;
       border-radius: 4px;
+    }
+
+    .dropdown {
+      margin-left: 10px;
+      margin-bottom: 10px;
+      width: 90%;
     }
 
     table {
-      width: 100%;
       border-collapse: collapse;
+      width: 100%;
+      margin-top: 20px;
     }
 
-    thead th {
-      position: sticky;
-      top: 0;
-      background: #f1f1f1;
-      border-bottom: 1px solid #ccc;
+    th, td {
+      border: 1px solid #ccc;
       padding: 8px;
       text-align: left;
-      z-index: 1;
     }
 
-    tbody td {
-      padding: 6px;
-      border-bottom: 1px solid #eee;
-    }
-
-    tbody tr:nth-child(even) {
-      background: #fafafa;
-    }
-
-    input[type="text"], input[type="checkbox"] {
-      width: 100%;
-      padding: 4px;
-      border: 1px solid #ccc;
-      border-radius: 3px;
-    }
-
-    .filter-icon {
-      margin-left: 6px;
-      cursor: pointer;
-      color: gray;
-    }
-
-    .filter-box {
-      position: absolute;
-      background: white;
-      border: 1px solid #ccc;
-      padding: 8px;
-      z-index: 10;
-    }
-
-    .clear-filters {
-      font-size: 12px;
-      color: red;
-      float: right;
-      cursor: pointer;
+    th {
+      background-color: #eee;
     }
   </style>
 </head>
 <body>
-  <div id="app">
-    <!-- Static Left Panel -->
+  <div id="topbar">
+    <button id="toggleSidebar">&#x25B6;</button>
+    <h1>Trade AI</h1>
+  </div>
+
+  <div id="container">
     <div id="sidebar">
-      <div id="sheetButtons"></div>
+      <button class="main-btn" onclick="loadExcelFile('recognition')">Recognition Settings</button>
+      <select class="dropdown" id="recognitionSheets" onchange="loadSheet('recognition')"></select>
+
+      <button class="main-btn" onclick="loadExcelFile('screening')">Screening Settings</button>
+      <select class="dropdown" id="screeningSheets" onchange="loadSheet('screening')"></select>
     </div>
 
-    <!-- Main Content -->
-    <div id="main">
-      <div id="topBar">
-        <h2 id="sheetTitle">Select a sheet</h2>
-        <div id="toolbar" class="hidden">
-          <button onclick="addRow()">＋ Add</button>
-          <button id="btnRemove" class="disabled" onclick="removeSelected()">– Remove</button>
-          <button id="btnSave" class="disabled" onclick="save()">💾 Save</button>
-        </div>
-      </div>
-
-      <div id="emptyState">No sheet selected.</div>
-
-      <div id="dataTable" class="hidden">
-        <table>
-          <thead><tr id="headerRow"></tr></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-      </div>
+    <div id="content">
+      <!-- Table gets inserted here -->
     </div>
   </div>
 
