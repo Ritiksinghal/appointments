@@ -1,190 +1,31 @@
-function loadSheet(type, sheetName) {
-  const loader = document.getElementById('loader');
-  loader.style.display = 'flex';
+colKeys.forEach((col, idx) => {
+  const th = document.createElement('th');
+  th.style.position = 'relative';
+  th.style.userSelect = 'none';
+  th.style.whiteSpace = 'nowrap';
+  th.style.paddingRight = '24px'; // ⬅️ reserve space for icon
 
-  // Auto-close sidebar
-  document.getElementById('sidebar').style.display = 'none';
-  document.getElementById('toggleSidebar').innerHTML = '&#x25B6;'; // ▶
+  const labelSpan = document.createElement('span');
+  labelSpan.textContent = col;
 
-  try {
-    const sheetData = excelData[type][sheetName];
-    const contentDiv = document.getElementById('content');
-    contentDiv.innerHTML = ''; // clear previous content
+  const hideIcon = document.createElement('span');
+  hideIcon.innerHTML = '&#x1f441;&#x200d;&#x1f5e8;'; // 👁️‍🗨️
+  hideIcon.title = 'Hide Column';
+  hideIcon.style.cursor = 'pointer';
+  hideIcon.style.position = 'absolute';
+  hideIcon.style.top = '50%';
+  hideIcon.style.right = '4px';
+  hideIcon.style.transform = 'translateY(-50%)';
+  hideIcon.style.fontSize = '14px';
+  hideIcon.style.opacity = '0.7';
+  hideIcon.style.backgroundColor = '#eee'; // optional: matches header bg
 
-    const capitalizeFirst = (str) =>
-      str.charAt(0).toUpperCase() + str.slice(1).toLowerCase().replace(/_/g, ' ');
+  hideIcon.onclick = () => {
+    hiddenCols.add(idx);
+    document
+      .querySelectorAll(`.sheet-table th:nth-child(${idx + 1}), .sheet-table td:nth-child(${idx + 1})`)
+      .forEach((el) => (el.style.display = 'none'));
+  };
 
-    if (!sheetData || !sheetData.length) {
-      loader.style.display = 'none';
-      contentDiv.innerHTML += '<p>No data available in this sheet.</p>';
-      return;
-    }
-
-    // === SHEET TITLE BAR ===
-    const sheetTitleBar = document.createElement('div');
-    sheetTitleBar.style.display = 'flex';
-    sheetTitleBar.style.justifyContent = 'space-between';
-    sheetTitleBar.style.alignItems = 'center';
-    sheetTitleBar.style.position = 'sticky';
-    sheetTitleBar.style.top = '0';
-    sheetTitleBar.style.backgroundColor = 'white';
-    sheetTitleBar.style.zIndex = '3';
-    sheetTitleBar.style.padding = '10px 0';
-    sheetTitleBar.style.borderBottom = '1px solid #ccc';
-
-    const fileLabel =
-      type === 'recognition'
-        ? 'Recognition Settings'
-        : type === 'screening'
-        ? 'Screening Settings'
-        : type;
-
-    const sheetTitle = document.createElement('h2');
-    sheetTitle.textContent = `${fileLabel} / ${capitalizeFirst(sheetName)}`;
-    sheetTitle.style.margin = '0';
-    sheetTitle.style.fontSize = '16px';
-
-    // === VIEW MODE + UNHIDE ===
-    const viewToggle = document.createElement('div');
-    viewToggle.id = 'viewOptions';
-    viewToggle.style.textAlign = 'right';
-
-    viewToggle.innerHTML = `
-      <label>
-        <input type="radio" name="viewMode" value="comfortable" checked> Comfortable
-      </label>
-      <label style="margin-left: 10px;">
-        <input type="radio" name="viewMode" value="compact"> Compact
-      </label>
-    `;
-
-    viewToggle.querySelectorAll('input[name="viewMode"]').forEach((radio) => {
-      radio.addEventListener('change', (e) => {
-        if (e.target.value === 'compact') {
-          contentDiv.classList.add('compact-mode');
-        } else {
-          contentDiv.classList.remove('compact-mode');
-        }
-      });
-    });
-
-    const unhideBtn = document.createElement('button');
-    unhideBtn.textContent = 'Unhide All';
-    unhideBtn.className = 'hide-toggle-btn';
-    unhideBtn.style.marginLeft = '20px';
-
-    const rightBar = document.createElement('div');
-    rightBar.style.position = 'relative';
-    rightBar.appendChild(viewToggle);
-    rightBar.appendChild(unhideBtn);
-
-    sheetTitleBar.appendChild(sheetTitle);
-    sheetTitleBar.appendChild(rightBar);
-    contentDiv.appendChild(sheetTitleBar);
-
-    // === TABLE RENDERING ===
-    const tableContainer = document.createElement('div');
-    tableContainer.id = 'table-container';
-
-    const table = document.createElement('table');
-    table.classList.add('sheet-table');
-
-    const header = document.createElement('tr');
-    const colKeys = Object.keys(sheetData[0]);
-
-    const hiddenCols = new Set(); // track hidden column indexes
-
-    colKeys.forEach((col, idx) => {
-      const th = document.createElement('th');
-      th.style.position = 'relative';
-      th.style.userSelect = 'none';
-      th.style.whiteSpace = 'nowrap';
-
-      const labelSpan = document.createElement('span');
-      labelSpan.textContent = col;
-
-      const hideIcon = document.createElement('span');
-      hideIcon.innerHTML = '&#x1f441;&#x200d;&#x1f5e8;'; // 👁️‍🗨️
-      hideIcon.title = 'Hide Column';
-      hideIcon.style.cursor = 'pointer';
-      hideIcon.style.position = 'absolute';
-      hideIcon.style.right = '4px';
-      hideIcon.style.top = '50%';
-      hideIcon.style.transform = 'translateY(-50%)';
-      hideIcon.style.fontSize = '14px';
-      hideIcon.style.opacity = '0.7';
-
-      hideIcon.onclick = () => {
-        hiddenCols.add(idx);
-        document
-          .querySelectorAll(`.sheet-table th:nth-child(${idx + 1}), .sheet-table td:nth-child(${idx + 1})`)
-          .forEach((el) => (el.style.display = 'none'));
-      };
-
-      th.appendChild(labelSpan);
-      th.appendChild(hideIcon);
-
-      // === RESIZER ===
-      const resizer = document.createElement('div');
-      resizer.className = 'col-resizer';
-      th.appendChild(resizer);
-
-      resizer.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        const startX = e.pageX;
-        const startWidth = th.offsetWidth;
-
-        const onMouseMove = (moveEvent) => {
-          const newWidth = startWidth + (moveEvent.pageX - startX);
-          th.style.width = newWidth + 'px';
-          const allCells = document.querySelectorAll(`.sheet-table tr td:nth-child(${idx + 1})`);
-          allCells.forEach((td) => (td.style.width = newWidth + 'px'));
-        };
-
-        const onMouseUp = () => {
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      });
-
-      header.appendChild(th);
-    });
-
-    table.appendChild(header);
-
-    sheetData.forEach((row) => {
-      const tr = document.createElement('tr');
-      Object.values(row).forEach((cell) => {
-        const td = document.createElement('td');
-        td.textContent = cell;
-        td.style.maxWidth = '300px';
-        td.style.overflowWrap = 'break-word';
-        td.style.wordBreak = 'break-word';
-        td.style.whiteSpace = 'normal';
-        tr.appendChild(td);
-      });
-      table.appendChild(tr);
-    });
-
-    tableContainer.appendChild(table);
-    contentDiv.appendChild(tableContainer);
-
-    // === UNHIDE BUTTON FUNCTION ===
-    unhideBtn.onclick = () => {
-      hiddenCols.forEach((idx) => {
-        document
-          .querySelectorAll(`.sheet-table th:nth-child(${idx + 1}), .sheet-table td:nth-child(${idx + 1})`)
-          .forEach((el) => (el.style.display = ''));
-      });
-      hiddenCols.clear();
-    };
-  } catch (err) {
-    console.error('Error rendering sheet:', err);
-    alert('Failed to render sheet.');
-  } finally {
-    loader.style.display = 'none';
-  }
-}
+  th.appendChild(labelSpan);
+  th.appendChild(hideIcon);
