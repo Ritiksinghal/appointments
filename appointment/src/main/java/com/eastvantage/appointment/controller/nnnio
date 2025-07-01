@@ -1,42 +1,14 @@
-.sheet-table th,
-.sheet-table td {
-  padding: 8px 12px;
-  min-width: 100px;
-  max-width: 300px;
-  text-align: left;
-  vertical-align: top;
-  word-break: break-word;
-  white-space: normal;
+.hide-toggle-btn {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-left: 10px;
 }
 
-.sheet-table th {
-  background-color: #eee;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-/* Scrollable container */
-#table-container {
-  overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(100vh - 140px);
-}
-
-/* Compact mode */
-.compact-mode .sheet-table td,
-.compact-mode .sheet-table th {
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
-/* Column resize handle */
-.col-resizer {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 5px;
-  height: 100%;
-  cursor: col-resize;
-  z-index: 3;
+.hide-toggle-btn:hover {
+  background-color: #e0e0e0;
 }
