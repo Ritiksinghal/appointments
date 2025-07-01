@@ -1,40 +1,195 @@
-import openpyxl
-from openpyxl.utils import get_column_letter
-from app.core.config import settings
-from app.core.logger import logger
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Excel Sheet Viewer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-def write_excel_all_sheets(data: dict):
-    logger.info("Writing updated data to Excel")
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f9f9f9;
+    }
 
-    # Load or create workbook
-    try:
-        wb = openpyxl.load_workbook(settings.EXCEL_PATH)
-    except FileNotFoundError:
-        wb = openpyxl.Workbook()
-        wb.remove(wb.active)  # remove default sheet
+    #container {
+      display: flex;
+      width: 100%;
+    }
 
-    for sheet_name, rows in data.items():
-        if sheet_name in wb.sheetnames:
-            wb.remove(wb[sheet_name])
+    #sidebar {
+      width: 260px;
+      background-color: #fff;
+      border-right: 1px solid #ddd;
+      padding: 16px;
+      overflow-y: auto;
+    }
 
-        ws = wb.create_sheet(title=sheet_name)
+    .file {
+      font-weight: 600;
+      margin-bottom: 12px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 4px;
+      background-color: #f0f0f0;
+    }
 
-        if not rows:
-            continue
+    .file:hover {
+      background-color: #e0e0e0;
+    }
 
-        # Write headers
-        headers = list(rows[0].keys())
-        ws.append(headers)
+    .sheet-list {
+      margin-left: 16px;
+      margin-top: 6px;
+    }
 
-        # Write rows
-        for row in rows:
-            ws.append([row.get(h) for h in headers])
+    .sheet {
+      cursor: pointer;
+      margin: 6px 0;
+      padding: 4px 6px;
+      color: #333;
+      border-radius: 4px;
+    }
 
-        # Auto column width (optional)
-        for i, col in enumerate(headers, start=1):
-            col_letter = get_column_letter(i)
-            max_length = max((len(str(row.get(col) or '')) for row in rows), default=0)
-            ws.column_dimensions[col_letter].width = max_length + 2
+    .sheet:hover {
+      background-color: #eaeaea;
+    }
 
-    wb.save(settings.EXCEL_PATH)
-    logger.info("Excel saved successfully")
+    #main {
+      flex-grow: 1;
+      padding: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sheet-title {
+      margin: 0 0 12px 0;
+      font-size: 20px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    #table-container {
+      flex-grow: 1;
+      overflow: auto;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background-color: #fff;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 800px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background-color: #f5f5f5;
+      z-index: 1;
+      border-bottom: 1px solid #ccc;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    th {
+      font-weight: 600;
+      color: #444;
+    }
+
+    tr:hover {
+      background-color: #f7f7f7;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="sidebar">
+      <div class="file" onclick="loadFile('recognition')">
+        📁 Recognition Settings
+        <div id="recognition-sheets" class="sheet-list"></div>
+      </div>
+      <div class="file" onclick="loadFile('screening')">
+        📁 Screening Settings
+        <div id="screening-sheets" class="sheet-list"></div>
+      </div>
+    </div>
+
+    <div id="main">
+      <h2 id="sheet-title">Select a sheet to view data</h2>
+      <div id="table-container"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadFile(type) {
+      const res = await fetch(`/${type}`);
+      const data = await res.json();
+
+      const sheetListEl = document.getElementById(`${type}-sheets`);
+      sheetListEl.innerHTML = '';
+
+      Object.keys(data).forEach(sheetName => {
+        const el = document.createElement('div');
+        el.className = 'sheet';
+        el.innerText = `📄 ${sheetName}`;
+        el.onclick = () => renderSheet(sheetName, data[sheetName]);
+        sheetListEl.appendChild(el);
+      });
+    }
+
+    function renderSheet(sheetName, rows) {
+      const title = document.getElementById('sheet-title');
+      title.innerText = sheetName;
+
+      const container = document.getElementById('table-container');
+      container.innerHTML = '';
+
+      if (rows.length === 0) {
+        container.innerText = 'No data in sheet';
+        return;
+      }
+
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+
+      Object.keys(rows[0]).forEach(key => {
+        const th = document.createElement('th');
+        th.innerText = key;
+        headerRow.appendChild(th);
+      });
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        Object.values(row).forEach(val => {
+          const td = document.createElement('td');
+          td.innerText = val ?? '';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      table.appendChild(tbody);
+      container.appendChild(table);
+    }
+  </script>
+</body>
+</html>
