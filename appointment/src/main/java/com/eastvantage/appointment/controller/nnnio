@@ -1,10 +1,11 @@
-<div id="content">
-  <div id="viewOptions" style="text-align: right; margin-bottom: 10px;">
-    <label>
-      <input type="radio" name="viewMode" value="comfortable" checked> Comfortable
-    </label>
-    <label style="margin-left: 10px;">
-      <input type="radio" name="viewMode" value="compact"> Compact
-    </label>
-  </div>
-</div>
+// View mode toggle
+document.querySelectorAll('input[name="viewMode"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    const content = document.getElementById('content');
+    if (e.target.value === 'compact') {
+      content.classList.add('compact-mode');
+    } else {
+      content.classList.remove('compact-mode');
+    }
+  });
+});
