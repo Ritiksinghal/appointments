@@ -1,32 +1,10 @@
-#content {
-  flex-grow: 1;
-  padding: 20px;
-  overflow: hidden; /* Disable content scrolling */
-  display: flex;
-  flex-direction: column;
-}
-
-#table-container {
-  flex-grow: 1;
-  overflow-y: auto;
-  max-height: calc(100vh - 140px); /* Topbar + title + some margin */
-  border-top: 1px solid #ccc;
-}
-
-.sheet-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.sheet-table th, .sheet-table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: left;
-}
-
-.sheet-table th {
-  background-color: #eee;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
+<div id="content">
+  <div id="viewOptions" style="text-align: right; margin-bottom: 10px;">
+    <label>
+      <input type="radio" name="viewMode" value="comfortable" checked> Comfortable
+    </label>
+    <label style="margin-left: 10px;">
+      <input type="radio" name="viewMode" value="compact"> Compact
+    </label>
+  </div>
+</div>
